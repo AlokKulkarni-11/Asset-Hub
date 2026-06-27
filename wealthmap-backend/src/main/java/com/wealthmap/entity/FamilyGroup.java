@@ -6,30 +6,27 @@ import lombok.NoArgsConstructor;
 import org.hibernate.annotations.CreationTimestamp;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Entity
-@Table(name = "users")
+@Table(name = "family_groups")
 @Data
 @NoArgsConstructor
-public class User {
+public class FamilyGroup {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(unique = true, nullable = false)
-    private String email;
-
-    @Column(nullable = false)
-    private String password;
-
     @Column(nullable = false)
     private String name;
 
+    @Column(unique = true, nullable = false)
+    private String inviteCode;
+
+    @Column(nullable = false)
+    private Long creatorId;
+
     @CreationTimestamp
     private LocalDateTime createdAt;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "family_group_id")
-    private FamilyGroup familyGroup;
 }

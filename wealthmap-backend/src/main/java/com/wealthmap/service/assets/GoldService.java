@@ -3,11 +3,9 @@ package com.wealthmap.service.assets;
 import com.wealthmap.dto.request.GoldRequest;
 import com.wealthmap.dto.response.AssetResponse;
 import com.wealthmap.dto.response.GoldResponse;
-import com.wealthmap.entity.FamilyMember;
 import com.wealthmap.entity.GoldItem;
 import com.wealthmap.entity.User;
 import com.wealthmap.repository.AssetRepository;
-import com.wealthmap.repository.FamilyMemberRepository;
 import com.wealthmap.repository.UserRepository;
 import com.wealthmap.service.price.PriceProviderFactory;
 import com.wealthmap.enums.AssetType;
@@ -23,7 +21,6 @@ import java.util.stream.Collectors;
 public class GoldService {
 
     private final AssetRepository assetRepository;
-    private final FamilyMemberRepository familyMemberRepository;
     private final UserRepository userRepository;
     private final PriceProviderFactory priceProviderFactory;
 
@@ -31,31 +28,8 @@ public class GoldService {
         User user = userRepository.findByEmail(userEmail)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
-        FamilyMember familyMember;
-        if (request.getFamilyMemberId() != null) {
-            familyMember = familyMemberRepository.findById(request.getFamilyMemberId())
-                    .orElseThrow(() -> new RuntimeException("Family member not found"));
-            if (!familyMember.getUser().getId().equals(user.getId())) {
-                throw new RuntimeException("Access Denied");
-            }
-        } else {
-            // Find or create SELF member
-            familyMember = familyMemberRepository.findByUserId(user.getId())
-                    .stream()
-                    .filter(f -> com.wealthmap.enums.RelationType.SELF.equals(f.getRelationType()))
-                    .findFirst()
-                    .orElseGet(() -> {
-                        FamilyMember self = new FamilyMember();
-                        self.setUser(user);
-                        self.setName(user.getName());
-                        self.setRelationType(com.wealthmap.enums.RelationType.SELF);
-                        return familyMemberRepository.save(self);
-                    });
-        }
-
         GoldItem goldItem = new GoldItem();
         goldItem.setUser(user);
-        goldItem.setFamilyMember(familyMember);
         goldItem.setName(request.getName());
         goldItem.setPurchaseDate(request.getPurchaseDate());
         goldItem.setNotes(request.getNotes());
@@ -117,8 +91,8 @@ public class GoldService {
         response.setAssetType(item.getAssetType());
         response.setPurchaseDate(item.getPurchaseDate());
         response.setNotes(item.getNotes());
-        response.setFamilyMemberId(item.getFamilyMember().getId());
-        response.setFamilyMemberName(item.getFamilyMember().getName());
+        response.setFamilyMemberId(item.getUser().getId());
+        response.setFamilyMemberName(item.getUser().getName());
         response.setInvestedAmount(item.getInvestedAmount());
 
         response.setWeightInGrams(item.getWeightGrams());

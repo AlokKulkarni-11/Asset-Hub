@@ -1,116 +1,270 @@
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Plus, Users, UserPlus, Loader2 } from 'lucide-react';
-import { getFamilyMembers, addFamilyMember } from '../api/family.api';
+import { getMyFamily, createFamily, joinFamily, addMember, getFamilyAssets } from '../api/family.api';
+import { Plus, Users, UserPlus, Loader2, Link, DollarSign } from 'lucide-react';
+import {
+  PieChart, Pie, Cell, ResponsiveContainer, Tooltip as RechartsTooltip, Legend
+} from 'recharts';
+import { useAuthStore } from '../store/authStore';
+
+const COLORS = ['#D4A843', '#34D399', '#3B82F6', '#F87171', '#A78BFA'];
 
 export default function Family() {
-  const [showAddForm, setShowAddForm] = useState(false);
-  const [name, setName] = useState('');
-  const [relationType, setRelationType] = useState('SELF');
-  
+  const { user } = useAuthStore();
   const queryClient = useQueryClient();
 
-  const { data: familyMembers, isLoading } = useQuery({
-    queryKey: ['family'],
-    queryFn: getFamilyMembers,
+  const [createName, setCreateName] = useState('');
+  const [joinCode, setJoinCode] = useState('');
+  const [inviteEmail, setInviteEmail] = useState('');
+  const [selectedSector, setSelectedSector] = useState<string | null>(null);
+
+  const { data: family, isLoading: familyLoading } = useQuery({
+    queryKey: ['family', 'me'],
+    queryFn: getMyFamily,
   });
 
-  const mutation = useMutation({
-    mutationFn: addFamilyMember,
+  const { data: familyAssets, isLoading: assetsLoading } = useQuery({
+    queryKey: ['family', 'assets'],
+    queryFn: getFamilyAssets,
+    enabled: !!family,
+  });
+
+  const createMutation = useMutation({
+    mutationFn: createFamily,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['family'] });
-      setShowAddForm(false);
-      setName('');
-      setRelationType('SELF');
-    },
+      queryClient.invalidateQueries({ queryKey: ['family', 'me'] });
+      setCreateName('');
+    }
   });
 
-  const handleAddSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!name) return;
-    mutation.mutate({ name, relationType });
+  const joinMutation = useMutation({
+    mutationFn: joinFamily,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['family', 'me'] });
+      setJoinCode('');
+    }
+  });
+
+  const addMemberMutation = useMutation({
+    mutationFn: addMember,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['family', 'me'] });
+      queryClient.invalidateQueries({ queryKey: ['family', 'assets'] });
+      setInviteEmail('');
+      alert('Member successfully added to your family!');
+    },
+    onError: (err: any) => {
+      alert(err.response?.data || 'Failed to add member');
+    }
+  });
+
+  if (familyLoading) {
+    return (
+      <div className="flex items-center justify-center h-[50vh]">
+        <Loader2 className="w-8 h-8 animate-spin text-gold-400" />
+      </div>
+    );
+  }
+
+  // --- 1. NOT IN A FAMILY (CREATE / JOIN) ---
+  if (!family) {
+    return (
+      <div className="space-y-8">
+        <div>
+          <h1 className="text-heading text-2xl font-dmsans">Family Portfolio</h1>
+          <p className="text-text-secondary mt-2">Join a family group to pool your portfolios together.</p>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl">
+          {/* Create Family */}
+          <div className="glass-card p-8 flex flex-col items-center text-center">
+            <div className="w-16 h-16 rounded-full bg-gold-400/10 flex items-center justify-center mb-4">
+              <Users className="w-8 h-8 text-gold-400" />
+            </div>
+            <h2 className="text-xl font-medium mb-2">Create a Family Group</h2>
+            <p className="text-text-secondary text-sm mb-6">Start a new family group and invite your spouse or children to track net worth together.</p>
+            
+            <input 
+              value={createName}
+              onChange={(e) => setCreateName(e.target.value)}
+              className="glass-input w-full mb-4 text-center"
+              placeholder="E.g. Sharma Family"
+            />
+            <button 
+              onClick={() => createMutation.mutate(createName)}
+              disabled={createMutation.isPending || !createName}
+              className="btn-primary w-full justify-center"
+            >
+              {createMutation.isPending ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Create Family'}
+            </button>
+          </div>
+
+          {/* Join Family */}
+          <div className="glass-card p-8 flex flex-col items-center text-center">
+            <div className="w-16 h-16 rounded-full bg-navy-900 border border-white/10 flex items-center justify-center mb-4">
+              <Link className="w-8 h-8 text-white" />
+            </div>
+            <h2 className="text-xl font-medium mb-2">Join existing Family</h2>
+            <p className="text-text-secondary text-sm mb-6">Enter the 6-digit invite code provided by your family creator.</p>
+            
+            <input 
+              value={joinCode}
+              onChange={(e) => setJoinCode(e.target.value.toUpperCase())}
+              className="glass-input w-full mb-4 text-center tracking-[0.5em] font-mono text-lg uppercase"
+              placeholder="XXXXXX"
+              maxLength={6}
+            />
+            <button 
+              onClick={() => joinMutation.mutate(joinCode)}
+              disabled={joinMutation.isPending || joinCode.length < 6}
+              className="btn-primary w-full justify-center"
+            >
+              {joinMutation.isPending ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Join Family'}
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // --- 2. FAMILY DASHBOARD ---
+  const isCreator = family.creatorId === user?.id;
+  const totalInvested = familyAssets?.reduce((sum, asset) => sum + (asset.investedAmount || 0), 0) || 0;
+  const totalCurrentValue = familyAssets?.reduce((sum, asset) => sum + (asset.currentValue || 0), 0) || 0;
+
+  const formatCurrency = (value: number) => {
+    return new Intl.NumberFormat('en-IN', {
+      style: 'currency',
+      currency: 'INR',
+      maximumFractionDigits: 0
+    }).format(value);
   };
 
+  const allocationData = familyAssets?.reduce((acc: any, asset) => {
+    const type = asset.assetType;
+    const existing = acc.find((item: any) => item.name === type);
+    if (existing) {
+      existing.value += asset.currentValue;
+    } else {
+      acc.push({ name: type, value: asset.currentValue });
+    }
+    return acc;
+  }, []) || [];
+
+  const sectorAssets = selectedSector ? familyAssets?.filter(a => a.assetType === selectedSector) : [];
+
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-heading">Family Management</h1>
-        <button 
-          onClick={() => setShowAddForm(!showAddForm)}
-          className="btn-primary"
-        >
-          <Plus className="w-5 h-5" />
-          Add Member
-        </button>
+    <div className="space-y-8">
+      {/* Header */}
+      <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-heading text-2xl font-dmsans">{family.name}</h1>
+          <p className="text-text-secondary text-sm mt-1">
+            Pooled Dashboard • Invite Code: <span className="text-gold-400 font-mono tracking-wider ml-1">{family.inviteCode}</span>
+          </p>
+        </div>
       </div>
 
-      {showAddForm && (
-        <div className="glass-card p-6 border-gold-400/30">
-          <h2 className="text-lg font-medium mb-4 flex items-center gap-2">
-            <UserPlus className="w-5 h-5 text-gold-400" />
-            New Family Member
-          </h2>
-          <form onSubmit={handleAddSubmit} className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
-            <div>
-              <label className="block text-sm text-text-secondary mb-1">Name</label>
-              <input 
-                value={name} 
-                onChange={(e) => setName(e.target.value)} 
-                className="glass-input" 
-                placeholder="E.g. Priya"
-              />
-            </div>
-            <div>
-              <label className="block text-sm text-text-secondary mb-1">Relationship</label>
-              <select 
-                value={relationType} 
-                onChange={(e) => setRelationType(e.target.value)} 
-                className="glass-input bg-navy-900"
-              >
-                <option value="SELF">Self</option>
-                <option value="SPOUSE">Spouse</option>
-                <option value="CHILD">Child</option>
-                <option value="PARENT">Parent</option>
-                <option value="SIBLING">Sibling</option>
-                <option value="OTHER">Other</option>
-              </select>
-            </div>
-            <button 
-              type="submit" 
-              disabled={mutation.isPending || !name} 
-              className="btn-primary"
-            >
-              {mutation.isPending ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Save'}
-            </button>
-          </form>
+      {/* Totals */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="glass-card p-6">
+          <p className="text-text-secondary text-sm mb-1">Family Total Net Worth</p>
+          <h2 className="networth-amount text-4xl">{formatCurrency(totalCurrentValue)}</h2>
         </div>
-      )}
+        <div className="glass-card p-6">
+          <p className="text-text-secondary text-sm mb-1">Family Total Invested</p>
+          <h2 className="text-display text-3xl text-white">{formatCurrency(totalInvested)}</h2>
+        </div>
+      </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {isLoading ? (
-          <div className="text-text-muted">Loading family members...</div>
-        ) : familyMembers?.length === 0 ? (
-          <div className="col-span-full glass-card p-12 flex flex-col items-center justify-center text-center">
-            <Users className="w-12 h-12 text-text-muted mb-4" />
-            <h3 className="text-lg font-medium mb-2">No Family Members</h3>
-            <p className="text-text-secondary">Add yourself and your family members to start tracking assets.</p>
-          </div>
-        ) : (
-          familyMembers?.map((member) => (
-            <div key={member.id} className="glass-card p-6 flex items-center justify-between hover:border-gold-400/20 transition-colors">
-              <div>
-                <h3 className="font-medium text-lg">{member.name}</h3>
-                <span className="text-xs px-2 py-1 rounded-full bg-navy-900 border border-white/10 text-gold-300 inline-block mt-2">
-                  {member.relationType}
-                </span>
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        
+        {/* Sector Breakdown */}
+        <div className="lg:col-span-2 glass-card p-6">
+          <h3 className="text-lg font-medium mb-6">Sector-wise Breakdown</h3>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
+            {allocationData.map((sector: any) => (
+              <div 
+                key={sector.name} 
+                onClick={() => setSelectedSector(selectedSector === sector.name ? null : sector.name)}
+                className={`p-4 rounded-xl border cursor-pointer transition-all ${
+                  selectedSector === sector.name 
+                    ? 'border-gold-400 bg-gold-400/5' 
+                    : 'border-white/5 bg-navy-900/50 hover:border-white/20'
+                }`}
+              >
+                <p className="text-sm text-text-secondary mb-1">{sector.name}</p>
+                <p className="text-xl font-medium">{formatCurrency(sector.value)}</p>
               </div>
-              <div className="text-right">
-                <span className="text-xs text-text-muted block">ID</span>
-                <span className="text-xl font-medium font-dmsans text-text-secondary">#{member.id}</span>
+            ))}
+          </div>
+
+          {/* Drill Down Sector List */}
+          {selectedSector && (
+            <div className="mt-6 border-t border-white/5 pt-6 animate-in slide-in-from-top-4 fade-in duration-300">
+              <h4 className="text-md font-medium text-gold-300 mb-4">{selectedSector} Assets</h4>
+              <div className="space-y-3">
+                {sectorAssets?.map((asset: any) => (
+                  <div key={asset.id} className="bg-navy-900 border border-white/5 rounded-lg p-4 flex items-center justify-between">
+                    <div>
+                      <p className="font-medium">{asset.name}</p>
+                      <div className="flex items-center gap-2 mt-1">
+                        <span className="text-xs bg-navy-800 text-text-muted px-2 py-0.5 rounded">Owner: {asset.familyMemberName}</span>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <p className="font-medium text-gold-400">{formatCurrency(asset.currentValue)}</p>
+                      <p className="text-xs text-text-secondary">Inv: {formatCurrency(asset.investedAmount)}</p>
+                    </div>
+                  </div>
+                ))}
               </div>
             </div>
-          ))
-        )}
+          )}
+        </div>
+
+        {/* Member Management */}
+        <div className="glass-card p-6 flex flex-col h-full">
+          <h3 className="text-lg font-medium mb-4 flex items-center justify-between">
+            <span>Members ({family.members.length})</span>
+          </h3>
+
+          <div className="space-y-3 flex-1 mb-6">
+            {family.members.map(member => (
+              <div key={member.id} className="flex items-center justify-between p-3 bg-navy-900 rounded-lg">
+                <div>
+                  <p className="text-sm font-medium">{member.name}</p>
+                  <p className="text-xs text-text-muted">{member.email}</p>
+                </div>
+                {member.id === family.creatorId && (
+                  <span className="text-[10px] uppercase tracking-wider bg-gold-400/20 text-gold-400 px-2 py-1 rounded">Admin</span>
+                )}
+              </div>
+            ))}
+          </div>
+
+          {isCreator && (
+            <div className="pt-4 border-t border-white/10 mt-auto">
+              <p className="text-xs text-text-secondary mb-2">Directly add registered user</p>
+              <div className="flex gap-2">
+                <input 
+                  type="email"
+                  value={inviteEmail}
+                  onChange={(e) => setInviteEmail(e.target.value)}
+                  className="glass-input flex-1 text-sm py-2 px-3"
+                  placeholder="user@email.com"
+                />
+                <button 
+                  onClick={() => addMemberMutation.mutate(inviteEmail)}
+                  disabled={addMemberMutation.isPending || !inviteEmail}
+                  className="btn-primary py-2 px-3"
+                >
+                  {addMemberMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <UserPlus className="w-4 h-4" />}
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

@@ -3,15 +3,12 @@ package com.wealthmap.service.assets;
 import com.wealthmap.dto.request.StockRequest;
 import com.wealthmap.dto.response.AssetResponse;
 import com.wealthmap.dto.response.StockResponse;
-import com.wealthmap.entity.FamilyMember;
 import com.wealthmap.entity.Stock;
 import com.wealthmap.entity.User;
 import com.wealthmap.repository.AssetRepository;
-import com.wealthmap.repository.FamilyMemberRepository;
 import com.wealthmap.repository.UserRepository;
 import com.wealthmap.service.price.PriceProviderFactory;
 import com.wealthmap.enums.AssetType;
-import com.wealthmap.enums.RelationType;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -30,7 +27,6 @@ import com.wealthmap.dto.response.StockSearchResponse;
 public class StockService {
 
     private final AssetRepository assetRepository;
-    private final FamilyMemberRepository familyMemberRepository;
     private final UserRepository userRepository;
     private final PriceProviderFactory priceProviderFactory;
 
@@ -38,21 +34,8 @@ public class StockService {
         User user = userRepository.findByEmail(userEmail)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
-        FamilyMember familyMember = familyMemberRepository.findByUserId(user.getId())
-                .stream()
-                .filter(f -> RelationType.SELF.equals(f.getRelationType()))
-                .findFirst()
-                .orElseGet(() -> {
-                    FamilyMember self = new FamilyMember();
-                    self.setUser(user);
-                    self.setName(user.getName());
-                    self.setRelationType(RelationType.SELF);
-                    return familyMemberRepository.save(self);
-                });
-
         Stock stock = new Stock();
         stock.setUser(user);
-        stock.setFamilyMember(familyMember);
         stock.setName(request.getCompanyName() + " (" + request.getTicker() + ")");
         stock.setAssetType(AssetType.STOCK);
         stock.setPurchaseDate(request.getPurchaseDate());
@@ -117,8 +100,8 @@ public class StockService {
         response.setAssetType(item.getAssetType());
         response.setPurchaseDate(item.getPurchaseDate());
         response.setNotes(item.getNotes());
-        response.setFamilyMemberId(item.getFamilyMember().getId());
-        response.setFamilyMemberName(item.getFamilyMember().getName());
+        response.setFamilyMemberId(item.getUser().getId());
+        response.setFamilyMemberName(item.getUser().getName());
         response.setInvestedAmount(item.getInvestedAmount());
 
         response.setTicker(item.getTicker());

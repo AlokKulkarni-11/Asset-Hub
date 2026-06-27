@@ -1,6 +1,5 @@
 package com.wealthmap.entity.base;
 
-import com.wealthmap.entity.FamilyMember;
 import com.wealthmap.entity.User;
 import com.wealthmap.enums.AssetType;
 import jakarta.persistence.*;
@@ -29,10 +28,6 @@ public abstract class Asset {
     private LocalDate purchaseDate;
     
     private String notes;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "family_member_id")
-    private FamilyMember familyMember;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)

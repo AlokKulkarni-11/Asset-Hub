@@ -1,22 +1,40 @@
 import api from './axios';
 
-export interface FamilyMemberResponse {
+export interface MemberResponse {
   id: number;
   name: string;
-  relationType: string;
+  email: string;
 }
 
-export interface FamilyMemberRequest {
+export interface FamilyDetailsResponse {
+  id: number;
   name: string;
-  relationType: string;
+  inviteCode: string;
+  creatorId: number;
+  members: MemberResponse[];
 }
 
-export const getFamilyMembers = async (): Promise<FamilyMemberResponse[]> => {
-  const { data } = await api.get('/family');
-  return data;
+export const getMyFamily = async (): Promise<FamilyDetailsResponse | null> => {
+  const response = await api.get('/family/me');
+  if (response.status === 204) return null;
+  return response.data;
 };
 
-export const addFamilyMember = async (payload: FamilyMemberRequest): Promise<FamilyMemberResponse> => {
-  const { data } = await api.post('/family', payload);
-  return data;
+export const createFamily = async (name: string): Promise<FamilyDetailsResponse> => {
+  const response = await api.post('/family/create', { name });
+  return response.data;
+};
+
+export const joinFamily = async (inviteCode: string): Promise<FamilyDetailsResponse> => {
+  const response = await api.post('/family/join', { inviteCode });
+  return response.data;
+};
+
+export const addMember = async (email: string): Promise<void> => {
+  await api.post('/family/add-member', { email });
+};
+
+export const getFamilyAssets = async (): Promise<any[]> => {
+  const response = await api.get('/family/assets');
+  return response.data;
 };
