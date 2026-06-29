@@ -5,9 +5,10 @@ import { useAuthStore } from '../../store/authStore';
 
 interface SidebarProps {
   className?: string;
+  onLinkClick?: () => void;
 }
 
-export default function Sidebar({ className = '' }: SidebarProps) {
+export default function Sidebar({ className = '', onLinkClick }: SidebarProps) {
   const logout = useAuthStore((state) => state.logout);
 
   const navItems = [
@@ -23,7 +24,7 @@ export default function Sidebar({ className = '' }: SidebarProps) {
       <div className="p-6 flex items-center shrink-0">
         <h1 className="text-2xl font-bold font-dmsans text-transparent bg-clip-text bg-gradient-to-r from-gold-400 to-gold-300 flex items-center gap-4 whitespace-nowrap">
           <Wallet className="w-8 h-8 text-gold-400 shrink-0" />
-          <span className="opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+          <span className="opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity duration-300">
             Asset Hub
           </span>
         </h1>
@@ -34,6 +35,7 @@ export default function Sidebar({ className = '' }: SidebarProps) {
           <NavLink
             key={item.name}
             to={item.path}
+            onClick={onLinkClick}
             className={({ isActive }) =>
               `flex items-center gap-4 px-4 py-3 rounded-xl transition-all duration-200 whitespace-nowrap ${
                 isActive
@@ -43,7 +45,7 @@ export default function Sidebar({ className = '' }: SidebarProps) {
             }
           >
             <item.icon className="w-6 h-6 shrink-0" />
-            <span className="opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+            <span className="opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity duration-300">
               {item.name}
             </span>
           </NavLink>
@@ -52,11 +54,14 @@ export default function Sidebar({ className = '' }: SidebarProps) {
 
       <div className="p-4 border-t border-white/10 mt-auto shrink-0">
         <button
-          onClick={logout}
+          onClick={() => {
+            if (onLinkClick) onLinkClick();
+            logout();
+          }}
           className="flex items-center gap-4 px-4 py-3 w-full rounded-xl text-red-400 hover:bg-red-400/10 transition-colors duration-200 whitespace-nowrap"
         >
           <LogOut className="w-6 h-6 shrink-0" />
-          <span className="opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+          <span className="opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity duration-300">
             Logout
           </span>
         </button>
