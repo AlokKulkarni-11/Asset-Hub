@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useAuthStore } from '../store/authStore';
-import { User, Mail, Shield, Loader2, Save } from 'lucide-react';
+import { User, Mail, Shield, Loader2, Save, LogOut } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -16,6 +16,7 @@ type ProfileForm = z.infer<typeof profileSchema>;
 
 export default function Profile() {
   const user = useAuthStore((state) => state.user);
+  const logout = useAuthStore((state) => state.logout);
   const [loading, setLoading] = useState(false);
   const [successMsg, setSuccessMsg] = useState('');
 
@@ -39,16 +40,25 @@ export default function Profile() {
 
   return (
     <div className="max-w-2xl mx-auto space-y-6">
-      <h1 className="text-heading mb-8">Profile Settings</h1>
+      <div className="flex items-center justify-between mb-8">
+        <h1 className="text-heading">Profile Settings</h1>
+        <button
+          onClick={logout}
+          className="flex items-center gap-2 px-4 py-2 bg-red-500/10 text-red-400 rounded-lg hover:bg-red-500/20 transition-colors border border-red-500/20 text-sm font-medium"
+        >
+          <LogOut className="w-4 h-4" />
+          <span className="hidden sm:inline">Logout</span>
+        </button>
+      </div>
 
       <div className="glass-card p-8">
         <div className="flex items-center gap-6 mb-8 pb-8 border-b border-white/10">
-          <div className="w-24 h-24 rounded-full bg-gradient-to-br from-gold-400 to-gold-600 flex items-center justify-center text-navy-950 text-3xl font-bold shadow-lg shadow-gold-500/20">
+          <div className="w-24 h-24 rounded-full bg-gradient-to-br from-gold-400 to-gold-600 flex items-center justify-center text-navy-950 text-3xl font-bold shadow-lg shadow-gold-500/20 shrink-0">
             {user?.name?.charAt(0).toUpperCase() || 'U'}
           </div>
           <div>
-            <h2 className="text-2xl font-semibold">{user?.name}</h2>
-            <p className="text-text-secondary">{user?.email}</p>
+            <h2 className="text-2xl font-semibold break-all">{user?.name}</h2>
+            <p className="text-text-secondary break-all">{user?.email}</p>
             <span className="inline-block mt-2 text-xs px-2 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400">
               Active Member
             </span>
