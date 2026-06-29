@@ -23,19 +23,19 @@ Most net-worth trackers are simple ledgers where you just type in a number. Asse
 
 ## ✅ What is Implemented
 - **Authentication:** Secure user registration, login, and JWT-based session management.
-- **Polymorphic Data Models:** A unified `Asset` base table extending out to specialized tables (`gold_items`, `fixed_deposits`, `stocks`).
+- **Polymorphic Data Models:** A unified `Asset` base table extending out to specialized tables (`gold_items`, `fixed_deposits`, `stocks`, `mutual_funds`, `real_estate`).
 - **Real-Time Pricing Engine:** 
-  - **Stocks:** Live ticker fetching from Yahoo Finance.
+  - **Stocks & Mutual Funds:** Live ticker fetching from Yahoo Finance.
   - **Gold:** Live Spot Gold (USD/Ounce) fetching, Forex INR conversion, and physical market premium logic.
   - **Fixed Deposits:** Dynamic accrual using exact compound interest formulas based on elapsed days.
 - **Asset Dashboard:** A sleek, glass-styled grid displaying individual assets, invested amounts, real-time current values, and net gain/loss percentages.
-- **Full CRUD:** Ability to securely add new assets, delete assets, and update existing assets using dynamic pre-filled edit modals.
+- **Full CRUD:** Ability to securely add new assets, delete assets (with a custom confirmation UI), and update existing assets using dynamic pre-filled edit modals.
+- **Family Management:** Track assets owned by different family members under one master family dashboard, completely separated from your personal assets.
+- **Alerts & Maturities:** A dedicated Maturities page to track upcoming Fixed Deposit maturity dates with a countdown timer.
 
 ## 🚀 What is Left (Future Iterations)
-- **New Asset Classes:** Add support for Mutual Funds, Real Estate, and Cryptocurrencies.
 - **Data Visualization:** Implement `Recharts` to show historical net worth progression over time (Line charts) and portfolio diversification (Pie charts).
-- **Family Management:** Add the ability to create sub-profiles so users can track assets owned by different family members under one master dashboard.
-- **Alerts & Maturities:** Push notifications or dashboard banners for upcoming Fixed Deposit maturity dates.
+- **Cryptocurrencies:** Add support for tracking Crypto assets using a live crypto API.
 - **Performance Optimization:** Add Redis caching layer for the external financial APIs to prevent rate-limiting on heavy traffic.
 - **Export Data:** Allow users to export their entire portfolio to CSV/PDF for tax purposes.
 

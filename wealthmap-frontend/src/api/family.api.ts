@@ -14,6 +14,13 @@ export interface FamilyDetailsResponse {
   members: MemberResponse[];
 }
 
+export interface InviteResponse {
+  id: number;
+  familyName: string;
+  token: string;
+  createdAt: string;
+}
+
 export const getMyFamily = async (): Promise<FamilyDetailsResponse | null> => {
   const response = await api.get('/family/me');
   if (response.status === 204) return null;
@@ -25,13 +32,24 @@ export const createFamily = async (name: string): Promise<FamilyDetailsResponse>
   return response.data;
 };
 
-export const joinFamily = async (inviteCode: string): Promise<FamilyDetailsResponse> => {
-  const response = await api.post('/family/join', { inviteCode });
+export const inviteMember = async (name: string, email: string): Promise<string> => {
+  const response = await api.post('/family/invite', { name, email });
   return response.data;
 };
 
-export const addMember = async (email: string): Promise<void> => {
-  await api.post('/family/add-member', { email });
+export const acceptInvite = async (token: string): Promise<string> => {
+  const response = await api.post('/family/accept-invite', { token });
+  return response.data;
+};
+
+export const leaveFamily = async (): Promise<string> => {
+  const response = await api.post('/family/leave');
+  return response.data;
+};
+
+export const getPendingInvites = async (): Promise<InviteResponse[]> => {
+  const response = await api.get('/family/invites');
+  return response.data;
 };
 
 export const getFamilyAssets = async (): Promise<any[]> => {

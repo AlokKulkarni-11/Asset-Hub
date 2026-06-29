@@ -8,19 +8,14 @@ import com.wealthmap.entity.base.Asset;
 import com.wealthmap.service.assets.FixedDepositService;
 import com.wealthmap.service.assets.GoldService;
 import com.wealthmap.service.assets.StockService;
+import com.wealthmap.service.assets.MutualFundService;
+import com.wealthmap.service.assets.RealEstateService;
+import com.wealthmap.dto.request.MutualFundRequest;
+import com.wealthmap.dto.request.RealEstateRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
-import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.Authentication;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -33,6 +28,8 @@ public class AssetController {
     private final GoldService goldService;
     private final FixedDepositService fdService;
     private final StockService stockService;
+    private final MutualFundService mfService;
+    private final RealEstateService reService;
     private final AssetRepository assetRepository;
     private final UserRepository userRepository;
 
@@ -44,8 +41,45 @@ public class AssetController {
         allAssets.addAll(goldService.getAllGoldForUser(userEmail));
         allAssets.addAll(fdService.getAllFDsForUser(userEmail));
         allAssets.addAll(stockService.getAllStocksForUser(userEmail));
+        allAssets.addAll(mfService.getAllMutualFundsForUser(userEmail));
+        allAssets.addAll(reService.getAllRealEstateForUser(userEmail));
         
         return ResponseEntity.ok(allAssets);
+    }
+
+    @GetMapping("/mutualfund/search")
+    public ResponseEntity<Object> searchMutualFunds(@RequestParam String q) {
+        return ResponseEntity.ok(mfService.searchMutualFunds(q));
+    }
+
+    @GetMapping("/mutualfund/{id}")
+    public ResponseEntity<AssetResponse> getMutualFundById(@PathVariable Long id, Authentication authentication) {
+        return ResponseEntity.ok(mfService.getMutualFundById(id, authentication.getName()));
+    }
+
+    @PostMapping("/mutualfund")
+    public ResponseEntity<AssetResponse> addMutualFund(@RequestBody MutualFundRequest request, Authentication authentication) {
+        return ResponseEntity.ok(mfService.addMutualFund(request, authentication.getName()));
+    }
+
+    @PutMapping("/mutualfund/{id}")
+    public ResponseEntity<AssetResponse> updateMutualFund(@PathVariable Long id, @RequestBody MutualFundRequest request, Authentication authentication) {
+        return ResponseEntity.ok(mfService.updateMutualFund(id, request, authentication.getName()));
+    }
+
+    @GetMapping("/realestate/{id}")
+    public ResponseEntity<AssetResponse> getRealEstateById(@PathVariable Long id, Authentication authentication) {
+        return ResponseEntity.ok(reService.getRealEstateById(id, authentication.getName()));
+    }
+
+    @PostMapping("/realestate")
+    public ResponseEntity<AssetResponse> addRealEstate(@RequestBody RealEstateRequest request, Authentication authentication) {
+        return ResponseEntity.ok(reService.addRealEstate(request, authentication.getName()));
+    }
+
+    @PutMapping("/realestate/{id}")
+    public ResponseEntity<AssetResponse> updateRealEstate(@PathVariable Long id, @RequestBody RealEstateRequest request, Authentication authentication) {
+        return ResponseEntity.ok(reService.updateRealEstate(id, request, authentication.getName()));
     }
 
     @DeleteMapping("/{id}")

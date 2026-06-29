@@ -33,6 +33,10 @@ public abstract class Asset {
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "family_group_id")
+    private com.wealthmap.entity.FamilyGroup familyGroup;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private AssetType assetType;

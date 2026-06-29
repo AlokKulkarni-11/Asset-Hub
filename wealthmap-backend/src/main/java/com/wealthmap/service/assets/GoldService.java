@@ -30,6 +30,7 @@ public class GoldService {
 
         GoldItem goldItem = new GoldItem();
         goldItem.setUser(user);
+        goldItem.setFamilyGroup(user.getFamilyGroup());
         goldItem.setName(request.getName());
         goldItem.setPurchaseDate(request.getPurchaseDate());
         goldItem.setNotes(request.getNotes());
@@ -74,6 +75,7 @@ public class GoldService {
         return mapToResponse(saved);
     }
 
+    @org.springframework.transaction.annotation.Transactional(readOnly = true)
     public List<AssetResponse> getAllGoldForUser(String userEmail) {
         User user = userRepository.findByEmail(userEmail)
                 .orElseThrow(() -> new RuntimeException("User not found"));

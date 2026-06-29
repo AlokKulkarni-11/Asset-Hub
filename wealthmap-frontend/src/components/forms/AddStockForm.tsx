@@ -21,10 +21,10 @@ type AddStockFormInputs = z.infer<typeof addStockSchema>;
 
 interface Props {
   onClose: () => void;
-  editAssetId?: number;
+  initialData?: any;
 }
 
-export default function AddStockForm({ onClose, editAssetId }: Props) {
+export default function AddStockForm({ onClose, initialData }: Props) {
   const { register, handleSubmit, setValue, reset, watch, formState: { errors } } = useForm<any>({
     resolver: zodResolver(addStockSchema),
   });
@@ -39,20 +39,25 @@ export default function AddStockForm({ onClose, editAssetId }: Props) {
   const [isSearching, setIsSearching] = useState(false);
   const [showDropdown, setShowDropdown] = useState(false);
 
-  const { data: initialData, isLoading: isFetching } = useQuery({
-    queryKey: ['assets', 'stock', editAssetId],
-    queryFn: () => getStockAsset(editAssetId!),
-    enabled: !!editAssetId
-  });
-
   useEffect(() => {
     if (initialData) {
+      // Format date to YYYY-MM-DD
+      let formattedDate = '';
+      if (initialData.purchaseDate) {
+        if (Array.isArray(initialData.purchaseDate)) {
+          const [y, m, d] = initialData.purchaseDate;
+          formattedDate = `${y}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+        } else {
+          formattedDate = initialData.purchaseDate.toString().split('T')[0];
+        }
+      }
+
       reset({
         ticker: initialData.ticker,
-        companyName: initialData.companyName,
-        purchaseDate: initialData.purchaseDate.split('T')[0],
+        companyName: initialData.companyName || initialData.name,
+        purchaseDate: formattedDate,
         quantity: initialData.quantity,
-        averageBuyPrice: initialData.averageBuyPrice,
+        averageBuyPrice: initialData.averageBuyPrice || initialData.averagePrice,
         notes: initialData.notes || '',
       });
       setSearchQuery(initialData.ticker);
@@ -93,8 +98,8 @@ export default function AddStockForm({ onClose, editAssetId }: Props) {
     try {
       setLoading(true);
       setError(null);
-      if (editAssetId) {
-        await updateStockAsset(editAssetId, data);
+      if (initialData?.id) {
+        await updateStockAsset(initialData.id, data);
       } else {
         await addStockAsset(data);
       }
@@ -125,15 +130,10 @@ export default function AddStockForm({ onClose, editAssetId }: Props) {
         </button>
         
         <h2 className="text-xl font-semibold mb-6">
-          {editAssetId ? 'Edit Stock Position' : 'Add Stock Position'}
+          {initialData?.id ? 'Edit Stock Position' : 'Add Stock Position'}
         </h2>
 
-        {isFetching ? (
-          <div className="flex justify-center p-8">
-            <Loader2 className="w-8 h-8 animate-spin text-gold-400" />
-          </div>
-        ) : (
-          <>
+        <>
             {error && (
               <div className="bg-red-500/10 text-red-400 p-3 rounded-lg mb-4 text-sm">
                 {error}
@@ -207,12 +207,12 @@ export default function AddStockForm({ onClose, editAssetId }: Props) {
           </div>
 
               <button type="submit" disabled={loading} className="btn-primary w-full mt-4">
-                {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : (editAssetId ? 'Update Stock' : 'Save Stock')}
+                {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : (initialData?.id ? 'Update Stock' : 'Save Stock')}
               </button>
             </form>
           </>
-        )}
       </div>
     </div>
   );
 }
+

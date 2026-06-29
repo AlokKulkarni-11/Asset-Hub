@@ -30,8 +30,8 @@ public class StockPriceProvider implements PriceProvider {
                 com.fasterxml.jackson.databind.ObjectMapper mapper = new com.fasterxml.jackson.databind.ObjectMapper();
                 com.fasterxml.jackson.databind.JsonNode rootNode = mapper.readTree(response);
                 double currentPrice = rootNode.path("chart").path("result").get(0).path("meta").path("regularMarketPrice").asDouble();
-                
-                return BigDecimal.valueOf(currentPrice).multiply(stock.getQuantity()).setScale(2, RoundingMode.HALF_UP);
+                BigDecimal qty = stock.getQuantity() != null ? stock.getQuantity() : BigDecimal.ONE;
+                return BigDecimal.valueOf(currentPrice).multiply(qty).setScale(2, RoundingMode.HALF_UP);
             } catch (Exception e) {
                 System.err.println("Failed to fetch live stock price for " + stock.getTicker() + ": " + e.getMessage());
                 // Fallback if API fails

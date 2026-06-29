@@ -36,6 +36,7 @@ public class StockService {
 
         Stock stock = new Stock();
         stock.setUser(user);
+        stock.setFamilyGroup(user.getFamilyGroup());
         stock.setName(request.getCompanyName() + " (" + request.getTicker() + ")");
         stock.setAssetType(AssetType.STOCK);
         stock.setPurchaseDate(request.getPurchaseDate());
@@ -83,6 +84,7 @@ public class StockService {
         return mapToResponse(saved);
     }
 
+    @org.springframework.transaction.annotation.Transactional(readOnly = true)
     public List<AssetResponse> getAllStocksForUser(String userEmail) {
         User user = userRepository.findByEmail(userEmail)
                 .orElseThrow(() -> new RuntimeException("User not found"));

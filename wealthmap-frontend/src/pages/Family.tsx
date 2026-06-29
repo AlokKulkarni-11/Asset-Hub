@@ -1,22 +1,25 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { getMyFamily, createFamily, joinFamily, addMember, getFamilyAssets } from '../api/family.api';
-import { Plus, Users, UserPlus, Loader2, Link, DollarSign } from 'lucide-react';
-import {
-  PieChart, Pie, Cell, ResponsiveContainer, Tooltip as RechartsTooltip, Legend
-} from 'recharts';
+import { useSearchParams, useNavigate } from 'react-router-dom';
+import { getMyFamily, createFamily, inviteMember, acceptInvite, getPendingInvites, getFamilyAssets, leaveFamily } from '../api/family.api';
+import { Plus, Users, UserPlus, Loader2, Link, DollarSign, Mail, LogOut, ChevronDown } from 'lucide-react';
 import { useAuthStore } from '../store/authStore';
-
-const COLORS = ['#D4A843', '#34D399', '#3B82F6', '#F87171', '#A78BFA'];
 
 export default function Family() {
   const { user } = useAuthStore();
   const queryClient = useQueryClient();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const navigate = useNavigate();
 
   const [createName, setCreateName] = useState('');
-  const [joinCode, setJoinCode] = useState('');
+  const [inviteName, setInviteName] = useState('');
   const [inviteEmail, setInviteEmail] = useState('');
   const [selectedSector, setSelectedSector] = useState<string | null>(null);
+  const [selectedMemberIds, setSelectedMemberIds] = useState<number[]>([]);
+  const [dropdownOpen, setDropdownOpen] = useState(false);
+  
+  // Auto-accept invite if token is in URL
+  const tokenFromUrl = searchParams.get('invite_token');
 
   const { data: family, isLoading: familyLoading } = useQuery({
     queryKey: ['family', 'me'],
@@ -29,6 +32,12 @@ export default function Family() {
     enabled: !!family,
   });
 
+  const { data: pendingInvites, isLoading: invitesLoading } = useQuery({
+    queryKey: ['family', 'invites'],
+    queryFn: getPendingInvites,
+    enabled: !family && !familyLoading, // Only fetch invites if not in a family
+  });
+
   const createMutation = useMutation({
     mutationFn: createFamily,
     onSuccess: () => {
@@ -37,26 +46,56 @@ export default function Family() {
     }
   });
 
-  const joinMutation = useMutation({
-    mutationFn: joinFamily,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['family', 'me'] });
-      setJoinCode('');
+  const inviteMutation = useMutation({
+    mutationFn: (data: { name: string, email: string }) => inviteMember(data.name, data.email),
+    onSuccess: (message) => {
+      setInviteName('');
+      setInviteEmail('');
+      alert(message);
+    },
+    onError: (err: any) => {
+      alert(err.response?.data || 'Failed to send invitation');
     }
   });
 
-  const addMemberMutation = useMutation({
-    mutationFn: addMember,
-    onSuccess: () => {
+  const acceptMutation = useMutation({
+    mutationFn: acceptInvite,
+    onSuccess: (message) => {
       queryClient.invalidateQueries({ queryKey: ['family', 'me'] });
-      queryClient.invalidateQueries({ queryKey: ['family', 'assets'] });
-      setInviteEmail('');
-      alert('Member successfully added to your family!');
+      queryClient.invalidateQueries({ queryKey: ['family', 'invites'] });
+      
+      // Clean up URL if they came from an email link
+      if (tokenFromUrl) {
+        searchParams.delete('invite_token');
+        setSearchParams(searchParams);
+      }
+      alert(message || 'Successfully joined the family!');
     },
     onError: (err: any) => {
-      alert(err.response?.data || 'Failed to add member');
+      alert(err.response?.data || 'Failed to accept invitation');
     }
   });
+
+  const leaveMutation = useMutation({
+    mutationFn: leaveFamily,
+    onSuccess: (message) => {
+      queryClient.invalidateQueries({ queryKey: ['family', 'me'] });
+      queryClient.invalidateQueries({ queryKey: ['family', 'assets'] });
+      alert(message);
+    },
+    onError: (err: any) => {
+      alert(err.response?.data || 'Failed to leave family');
+    }
+  });
+
+  // Handle URL token auto-accept trigger
+  useEffect(() => {
+    if (tokenFromUrl && !familyLoading && !family) {
+      if (window.confirm('You have been invited to join a family. Accept invitation?')) {
+        acceptMutation.mutate(tokenFromUrl);
+      }
+    }
+  }, [tokenFromUrl, familyLoading, family]);
 
   if (familyLoading) {
     return (
@@ -66,13 +105,13 @@ export default function Family() {
     );
   }
 
-  // --- 1. NOT IN A FAMILY (CREATE / JOIN) ---
+  // --- 1. NOT IN A FAMILY (CREATE / PENDING INVITES) ---
   if (!family) {
     return (
       <div className="space-y-8">
         <div>
           <h1 className="text-heading text-2xl font-dmsans">Family Portfolio</h1>
-          <p className="text-text-secondary mt-2">Join a family group to pool your portfolios together.</p>
+          <p className="text-text-secondary mt-2">Create a family group or accept an invitation to pool portfolios together.</p>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl">
@@ -99,28 +138,41 @@ export default function Family() {
             </button>
           </div>
 
-          {/* Join Family */}
-          <div className="glass-card p-8 flex flex-col items-center text-center">
-            <div className="w-16 h-16 rounded-full bg-navy-900 border border-white/10 flex items-center justify-center mb-4">
-              <Link className="w-8 h-8 text-white" />
+          {/* Pending Invites */}
+          <div className="glass-card p-8 flex flex-col">
+            <div className="flex flex-col items-center text-center mb-6">
+              <div className="w-16 h-16 rounded-full bg-navy-900 border border-white/10 flex items-center justify-center mb-4">
+                <Mail className="w-8 h-8 text-white" />
+              </div>
+              <h2 className="text-xl font-medium mb-2">Pending Invitations</h2>
+              <p className="text-text-secondary text-sm">Invitations sent to your email will appear here.</p>
             </div>
-            <h2 className="text-xl font-medium mb-2">Join existing Family</h2>
-            <p className="text-text-secondary text-sm mb-6">Enter the 6-digit invite code provided by your family creator.</p>
             
-            <input 
-              value={joinCode}
-              onChange={(e) => setJoinCode(e.target.value.toUpperCase())}
-              className="glass-input w-full mb-4 text-center tracking-[0.5em] font-mono text-lg uppercase"
-              placeholder="XXXXXX"
-              maxLength={6}
-            />
-            <button 
-              onClick={() => joinMutation.mutate(joinCode)}
-              disabled={joinMutation.isPending || joinCode.length < 6}
-              className="btn-primary w-full justify-center"
-            >
-              {joinMutation.isPending ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Join Family'}
-            </button>
+            <div className="flex-1 overflow-y-auto space-y-3">
+              {invitesLoading ? (
+                <div className="flex justify-center py-4"><Loader2 className="w-6 h-6 animate-spin text-gold-400" /></div>
+              ) : pendingInvites?.length === 0 ? (
+                <div className="text-center py-8 text-text-muted text-sm border border-dashed border-white/10 rounded-lg">
+                  No pending invitations.
+                </div>
+              ) : (
+                pendingInvites?.map(invite => (
+                  <div key={invite.id} className="bg-navy-900 p-4 rounded-xl border border-white/10 flex items-center justify-between">
+                    <div>
+                      <p className="font-medium text-gold-300">{invite.familyName}</p>
+                      <p className="text-xs text-text-secondary">Sent: {new Date(invite.createdAt).toLocaleDateString()}</p>
+                    </div>
+                    <button 
+                      onClick={() => acceptMutation.mutate(invite.token)}
+                      disabled={acceptMutation.isPending}
+                      className="bg-gold-400 text-black px-4 py-1.5 rounded-lg text-sm font-medium hover:bg-gold-500 transition-colors"
+                    >
+                      {acceptMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Accept'}
+                    </button>
+                  </div>
+                ))
+              )}
+            </div>
           </div>
         </div>
       </div>
@@ -129,8 +181,13 @@ export default function Family() {
 
   // --- 2. FAMILY DASHBOARD ---
   const isCreator = family.creatorId === user?.id;
-  const totalInvested = familyAssets?.reduce((sum, asset) => sum + (asset.investedAmount || 0), 0) || 0;
-  const totalCurrentValue = familyAssets?.reduce((sum, asset) => sum + (asset.currentValue || 0), 0) || 0;
+  
+  const filteredAssets = selectedMemberIds.length === 0 
+    ? familyAssets 
+    : familyAssets?.filter(a => selectedMemberIds.includes(a.familyMemberId));
+
+  const totalInvested = filteredAssets?.reduce((sum, asset) => sum + (asset.investedAmount || 0), 0) || 0;
+  const totalCurrentValue = filteredAssets?.reduce((sum, asset) => sum + (asset.currentValue || 0), 0) || 0;
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('en-IN', {
@@ -140,7 +197,7 @@ export default function Family() {
     }).format(value);
   };
 
-  const allocationData = familyAssets?.reduce((acc: any, asset) => {
+  const allocationData = filteredAssets?.reduce((acc: any, asset) => {
     const type = asset.assetType;
     const existing = acc.find((item: any) => item.name === type);
     if (existing) {
@@ -151,17 +208,73 @@ export default function Family() {
     return acc;
   }, []) || [];
 
-  const sectorAssets = selectedSector ? familyAssets?.filter(a => a.assetType === selectedSector) : [];
+  const sectorAssets = selectedSector ? filteredAssets?.filter(a => a.assetType === selectedSector) : [];
 
   return (
     <div className="space-y-8">
       {/* Header */}
-      <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+      <div className="flex flex-col gap-4">
         <div>
           <h1 className="text-heading text-2xl font-dmsans">{family.name}</h1>
-          <p className="text-text-secondary text-sm mt-1">
-            Pooled Dashboard • Invite Code: <span className="text-gold-400 font-mono tracking-wider ml-1">{family.inviteCode}</span>
-          </p>
+          
+          <div className="relative mt-4 flex items-center">
+            <span className="text-text-secondary text-sm mr-3">Filter by Member:</span>
+            <button
+              onClick={() => setDropdownOpen(!dropdownOpen)}
+              className="bg-navy-900 border border-white/20 text-white rounded-lg py-1.5 px-4 text-sm flex items-center justify-between min-w-[200px] focus:outline-none hover:border-white/40 transition-colors"
+            >
+              <span>
+                {selectedMemberIds.length === 0 
+                  ? 'All Members' 
+                  : `${selectedMemberIds.length} Selected`}
+              </span>
+              <ChevronDown className={`w-4 h-4 ml-2 opacity-70 transition-transform ${dropdownOpen ? 'rotate-180' : ''}`} />
+            </button>
+
+            {dropdownOpen && (
+              <div className="absolute top-full left-[120px] mt-2 w-64 bg-navy-800 border border-white/10 rounded-lg shadow-2xl z-50 py-2">
+                <div 
+                  className="px-4 py-2 hover:bg-white/5 cursor-pointer flex items-center gap-3 transition-colors"
+                  onClick={() => {
+                    setSelectedMemberIds([]);
+                    setDropdownOpen(false);
+                  }}
+                >
+                  <input 
+                    type="checkbox" 
+                    checked={selectedMemberIds.length === 0} 
+                    readOnly
+                    className="w-4 h-4 rounded border-white/20 bg-navy-900 accent-gold-400"
+                  />
+                  <span className="text-sm font-medium">All Members</span>
+                </div>
+                <div className="h-px bg-white/10 my-1"></div>
+                <div className="max-h-60 overflow-y-auto">
+                  {family.members.map((m: any) => (
+                    <div 
+                      key={m.id}
+                      className="px-4 py-2 hover:bg-white/5 cursor-pointer flex items-center gap-3 transition-colors"
+                      onClick={() => {
+                        if (selectedMemberIds.includes(m.id)) {
+                          setSelectedMemberIds(selectedMemberIds.filter(id => id !== m.id));
+                        } else {
+                          setSelectedMemberIds([...selectedMemberIds, m.id]);
+                        }
+                      }}
+                    >
+                      <input 
+                        type="checkbox" 
+                        checked={selectedMemberIds.includes(m.id)} 
+                        readOnly
+                        className="w-4 h-4 rounded border-white/20 bg-navy-900 accent-gold-400"
+                      />
+                      <span className="text-sm">{m.name}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
@@ -205,16 +318,64 @@ export default function Family() {
               <h4 className="text-md font-medium text-gold-300 mb-4">{selectedSector} Assets</h4>
               <div className="space-y-3">
                 {sectorAssets?.map((asset: any) => (
-                  <div key={asset.id} className="bg-navy-900 border border-white/5 rounded-lg p-4 flex items-center justify-between">
-                    <div>
-                      <p className="font-medium">{asset.name}</p>
-                      <div className="flex items-center gap-2 mt-1">
-                        <span className="text-xs bg-navy-800 text-text-muted px-2 py-0.5 rounded">Owner: {asset.familyMemberName}</span>
+                  <div key={asset.id} className="bg-navy-900 border border-white/5 rounded-lg p-5 flex flex-col gap-4">
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <p className="font-medium text-lg">{asset.name}</p>
+                        <div className="flex items-center gap-2 mt-1">
+                          <span className="text-xs bg-navy-800 text-text-muted px-2 py-0.5 rounded">Owner: {asset.familyMemberName}</span>
+                          <span className="text-xs bg-gold-400/10 text-gold-400 px-2 py-0.5 rounded">{asset.assetType.replace('_', ' ')}</span>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <p className="font-medium text-gold-400 text-lg">{formatCurrency(asset.currentValue)}</p>
+                        <p className="text-xs text-text-secondary">Inv: {formatCurrency(asset.investedAmount)}</p>
                       </div>
                     </div>
-                    <div className="text-right">
-                      <p className="font-medium text-gold-400">{formatCurrency(asset.currentValue)}</p>
-                      <p className="text-xs text-text-secondary">Inv: {formatCurrency(asset.investedAmount)}</p>
+                    
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-y-3 gap-x-4 pt-3 border-t border-white/10 text-sm">
+                      {asset.assetType === 'GOLD' && (
+                        <>
+                          <div><span className="text-text-muted text-xs block">Weight</span><span>{asset.weightInGrams}g</span></div>
+                          <div><span className="text-text-muted text-xs block">Purity</span><span>{asset.purity?.replace('_', ' ')}</span></div>
+                        </>
+                      )}
+                      {asset.assetType === 'FIXED_DEPOSIT' && (
+                        <>
+                          <div><span className="text-text-muted text-xs block">Bank</span><span>{asset.bankName}</span></div>
+                          <div><span className="text-text-muted text-xs block">Interest Rate</span><span>{asset.interestRate}%</span></div>
+                          <div><span className="text-text-muted text-xs block">Maturity Date</span><span>{asset.maturityDate ? new Date(asset.maturityDate).toLocaleDateString() : '-'}</span></div>
+                        </>
+                      )}
+                      {asset.assetType === 'STOCK' && (
+                        <>
+                          <div><span className="text-text-muted text-xs block">Ticker</span><span>{asset.ticker}</span></div>
+                          <div><span className="text-text-muted text-xs block">Quantity</span><span>{asset.quantity}</span></div>
+                          <div><span className="text-text-muted text-xs block">Avg Price</span><span>{formatCurrency(asset.averagePrice)}</span></div>
+                        </>
+                      )}
+                      {asset.assetType === 'MUTUAL_FUND' && (
+                        <>
+                          <div><span className="text-text-muted text-xs block">Scheme Code</span><span>{asset.schemeCode}</span></div>
+                          <div><span className="text-text-muted text-xs block">Units</span><span>{asset.units}</span></div>
+                          <div><span className="text-text-muted text-xs block">Avg Buy NAV</span><span>₹{asset.averageNav}</span></div>
+                        </>
+                      )}
+                      {asset.assetType === 'REAL_ESTATE' && (
+                        <>
+                          <div><span className="text-text-muted text-xs block">Type</span><span>{asset.propertyType}</span></div>
+                        </>
+                      )}
+                      <div>
+                        <span className="text-text-muted text-xs block">Returns</span>
+                        <span className={asset.gainLoss >= 0 ? 'text-emerald-400' : 'text-red-400'}>
+                          {asset.gainLoss >= 0 ? '+' : ''}{formatCurrency(asset.gainLoss)} ({asset.gainPercent?.toFixed(2)}%)
+                        </span>
+                      </div>
+                      <div>
+                        <span className="text-text-muted text-xs block">Purchase Date</span>
+                        <span>{asset.purchaseDate ? new Date(asset.purchaseDate).toLocaleDateString() : '-'}</span>
+                      </div>
                     </div>
                   </div>
                 ))}
@@ -243,27 +404,53 @@ export default function Family() {
             ))}
           </div>
 
-          {isCreator && (
-            <div className="pt-4 border-t border-white/10 mt-auto">
-              <p className="text-xs text-text-secondary mb-2">Directly add registered user</p>
-              <div className="flex gap-2">
-                <input 
-                  type="email"
-                  value={inviteEmail}
-                  onChange={(e) => setInviteEmail(e.target.value)}
-                  className="glass-input flex-1 text-sm py-2 px-3"
-                  placeholder="user@email.com"
-                />
-                <button 
-                  onClick={() => addMemberMutation.mutate(inviteEmail)}
-                  disabled={addMemberMutation.isPending || !inviteEmail}
-                  className="btn-primary py-2 px-3"
-                >
-                  {addMemberMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <UserPlus className="w-4 h-4" />}
-                </button>
+          <div className="mt-auto">
+            {isCreator && (
+              <div className="pt-4 border-t border-white/10 mb-4">
+                <h4 className="text-sm font-medium mb-1">Invite Member via Email</h4>
+                <p className="text-xs text-text-secondary mb-3">An email invitation will be sent to them with a link to join.</p>
+                <div className="space-y-2">
+                  <input 
+                    type="text"
+                    value={inviteName}
+                    onChange={(e) => setInviteName(e.target.value)}
+                    className="glass-input w-full text-sm py-2 px-3"
+                    placeholder="Their Name"
+                  />
+                  <input 
+                    type="email"
+                    value={inviteEmail}
+                    onChange={(e) => setInviteEmail(e.target.value)}
+                    className="glass-input w-full text-sm py-2 px-3"
+                    placeholder="Their Email Address"
+                  />
+                  <button 
+                    onClick={() => inviteMutation.mutate({ name: inviteName, email: inviteEmail })}
+                    disabled={inviteMutation.isPending || !inviteEmail || !inviteName}
+                    className="btn-primary w-full py-2 px-3 justify-center mt-2"
+                  >
+                    {inviteMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : 
+                      <><Mail className="w-4 h-4" /> Send Email Invitation</>}
+                  </button>
+                </div>
               </div>
+            )}
+
+            <div className="pt-4 border-t border-white/10">
+              <button
+                onClick={() => {
+                  if (window.confirm('Are you sure you want to leave this family group? You will lose access to the pooled dashboard.')) {
+                    leaveMutation.mutate();
+                  }
+                }}
+                disabled={leaveMutation.isPending}
+                className="w-full flex items-center justify-center gap-2 px-4 py-2 text-sm text-red-400 hover:bg-red-400/10 rounded-lg transition-colors border border-red-400/20"
+              >
+                {leaveMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <LogOut className="w-4 h-4" />}
+                Leave Family Group
+              </button>
             </div>
-          )}
+          </div>
         </div>
       </div>
     </div>

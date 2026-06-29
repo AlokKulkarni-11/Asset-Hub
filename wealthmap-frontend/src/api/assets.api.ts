@@ -12,6 +12,12 @@ export interface AssetResponse {
   currentValue: number;
   gainLoss: number;
   gainPercent: number;
+  
+  // Optional specific fields
+  maturityDate?: string;
+  startDate?: string;
+  interestRate?: number;
+  bankName?: string;
 }
 
 export interface GoldRequest {
@@ -44,6 +50,25 @@ export interface StockRequest {
   notes?: string;
 }
 
+export interface MutualFundRequest {
+  schemeCode: string;
+  schemeName: string;
+  folioNumber?: string;
+  units: number;
+  averageNav: number;
+  purchaseDate: string;
+  notes?: string;
+}
+
+export interface RealEstateRequest {
+  propertyName: string;
+  propertyType: string;
+  purchasePrice: number;
+  estimatedCurrentValue: number;
+  purchaseDate: string;
+  notes?: string;
+}
+
 export interface StockSearchResponse {
   symbol: string;
   companyName: string;
@@ -58,6 +83,48 @@ export const getAllAssets = async (): Promise<AssetResponse[]> => {
 
 export const deleteAsset = async (id: number): Promise<void> => {
   await api.delete(`/assets/${id}`);
+};
+
+export interface MutualFundSearchResponse {
+  schemeCode: number;
+  schemeName: string;
+}
+
+// Mutual Fund Operations
+export const addMutualFund = async (payload: MutualFundRequest): Promise<AssetResponse> => {
+  const { data } = await api.post('/assets/mutualfund', payload);
+  return data;
+};
+
+export const updateMutualFund = async (id: number, payload: MutualFundRequest): Promise<AssetResponse> => {
+  const { data } = await api.put(`/assets/mutualfund/${id}`, payload);
+  return data;
+};
+
+export const searchMutualFunds = async (query: string): Promise<MutualFundSearchResponse[]> => {
+  const { data } = await api.get(`/assets/mutualfund/search?q=${query}`);
+  return data;
+};
+
+export const getMutualFundAsset = async (id: number): Promise<any> => {
+  const { data } = await api.get(`/assets/mutualfund/${id}`);
+  return data;
+};
+
+// Real Estate Operations
+export const addRealEstate = async (payload: RealEstateRequest): Promise<AssetResponse> => {
+  const { data } = await api.post('/assets/realestate', payload);
+  return data;
+};
+
+export const updateRealEstate = async (id: number, payload: RealEstateRequest): Promise<AssetResponse> => {
+  const { data } = await api.put(`/assets/realestate/${id}`, payload);
+  return data;
+};
+
+export const getRealEstateAsset = async (id: number): Promise<any> => {
+  const { data } = await api.get(`/assets/realestate/${id}`);
+  return data;
 };
 
 // Gold Operations

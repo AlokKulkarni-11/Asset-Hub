@@ -22,10 +22,10 @@ type AddFDFormInputs = z.infer<typeof addFDSchema>;
 
 interface Props {
   onClose: () => void;
-  editAssetId?: number;
+  initialData?: any;
 }
 
-export default function AddFDForm({ onClose, editAssetId }: Props) {
+export default function AddFDForm({ onClose, initialData }: Props) {
   const { register, handleSubmit, reset, formState: { errors } } = useForm<any>({
     resolver: zodResolver(addFDSchema),
     defaultValues: {
@@ -37,20 +37,23 @@ export default function AddFDForm({ onClose, editAssetId }: Props) {
   const [loading, setLoading] = useState(false);
   const queryClient = useQueryClient();
 
-  const { data: initialData, isLoading: isFetching } = useQuery({
-    queryKey: ['assets', 'fd', editAssetId],
-    queryFn: () => getFDAsset(editAssetId!),
-    enabled: !!editAssetId
-  });
-
   useEffect(() => {
     if (initialData) {
+      const formatDate = (dateVal: any) => {
+        if (!dateVal) return '';
+        if (Array.isArray(dateVal)) {
+          const [y, m, d] = dateVal;
+          return `${y}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+        }
+        return dateVal.toString().split('T')[0];
+      };
+
       reset({
         name: initialData.name,
         bankName: initialData.bankName,
-        startDate: initialData.startDate,
-        maturityDate: initialData.maturityDate,
-        principalAmount: initialData.principalAmount,
+        startDate: formatDate(initialData.startDate || initialData.purchaseDate),
+        maturityDate: formatDate(initialData.maturityDate),
+        principalAmount: initialData.principalAmount || initialData.investedAmount,
         interestRate: initialData.interestRate,
         compoundingFrequency: initialData.compoundingFrequency,
         notes: initialData.notes || '',
@@ -62,8 +65,8 @@ export default function AddFDForm({ onClose, editAssetId }: Props) {
     try {
       setLoading(true);
       setError(null);
-      if (editAssetId) {
-        await updateFDAsset(editAssetId, data);
+      if (initialData?.id) {
+        await updateFDAsset(initialData.id, data);
       } else {
         await addFDAsset(data);
       }
@@ -94,15 +97,10 @@ export default function AddFDForm({ onClose, editAssetId }: Props) {
         </button>
         
         <h2 className="text-xl font-semibold mb-6">
-          {editAssetId ? 'Edit Fixed Deposit' : 'Add Fixed Deposit'}
+          {initialData?.id ? 'Edit Fixed Deposit' : 'Add Fixed Deposit'}
         </h2>
 
-        {isFetching ? (
-          <div className="flex justify-center p-8">
-            <Loader2 className="w-8 h-8 animate-spin text-gold-400" />
-          </div>
-        ) : (
-          <>
+        <>
             {error && (
               <div className="bg-red-500/10 text-red-400 p-3 rounded-lg mb-4 text-sm">
                 {error}
@@ -160,12 +158,12 @@ export default function AddFDForm({ onClose, editAssetId }: Props) {
           </div>
 
               <button type="submit" disabled={loading} className="btn-primary w-full mt-4">
-                {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : (editAssetId ? 'Update Fixed Deposit' : 'Save Fixed Deposit')}
+                {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : (initialData?.id ? 'Update Fixed Deposit' : 'Save Fixed Deposit')}
               </button>
             </form>
           </>
-        )}
       </div>
     </div>
   );
 }
+

@@ -29,8 +29,9 @@ public class GoldPriceProvider implements PriceProvider {
         GoldItem item = (GoldItem) asset;
         
         // Purity multipliers
-        double multiplier = item.getPurity().getMultiplier();
-        BigDecimal pureWeight = item.getWeightGrams().multiply(BigDecimal.valueOf(multiplier));
+        double multiplier = item.getPurity() != null ? item.getPurity().getMultiplier() : 1.0;
+        BigDecimal weight = item.getWeightGrams() != null ? item.getWeightGrams() : BigDecimal.ZERO;
+        BigDecimal pureWeight = weight.multiply(BigDecimal.valueOf(multiplier));
         
         BigDecimal pricePerGramINR = getCurrentGoldPrice();
         

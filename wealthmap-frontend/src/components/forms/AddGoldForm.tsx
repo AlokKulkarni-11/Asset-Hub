@@ -20,10 +20,10 @@ type AddGoldFormInputs = z.infer<typeof addGoldSchema>;
 
 interface Props {
   onClose: () => void;
-  editAssetId?: number;
+  initialData?: any;
 }
 
-export default function AddGoldForm({ onClose, editAssetId }: Props) {
+export default function AddGoldForm({ onClose, initialData }: Props) {
   const { register, handleSubmit, reset, formState: { errors } } = useForm<any>({
     resolver: zodResolver(addGoldSchema),
     defaultValues: {
@@ -35,19 +35,24 @@ export default function AddGoldForm({ onClose, editAssetId }: Props) {
   const [loading, setLoading] = useState(false);
   const queryClient = useQueryClient();
 
-  const { data: initialData, isLoading: isFetching } = useQuery({
-    queryKey: ['assets', 'gold', editAssetId],
-    queryFn: () => getGoldAsset(editAssetId!),
-    enabled: !!editAssetId
-  });
-
   useEffect(() => {
     if (initialData) {
+      // Format date to YYYY-MM-DD
+      let formattedDate = '';
+      if (initialData.purchaseDate) {
+        if (Array.isArray(initialData.purchaseDate)) {
+          const [y, m, d] = initialData.purchaseDate;
+          formattedDate = `${y}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+        } else {
+          formattedDate = initialData.purchaseDate.toString().split('T')[0];
+        }
+      }
+
       reset({
         name: initialData.name,
-        purchaseDate: initialData.purchaseDate,
+        purchaseDate: formattedDate,
         notes: initialData.notes || '',
-        weightGrams: initialData.weightInGrams,
+        weightGrams: initialData.weightInGrams || initialData.weight,
         purity: initialData.purity,
         purchasePrice: initialData.purchasePrice,
       });
@@ -58,8 +63,8 @@ export default function AddGoldForm({ onClose, editAssetId }: Props) {
     try {
       setLoading(true);
       setError(null);
-      if (editAssetId) {
-        await updateGoldAsset(editAssetId, data);
+      if (initialData?.id) {
+        await updateGoldAsset(initialData.id, data);
       } else {
         await addGoldAsset(data);
       }
@@ -90,15 +95,10 @@ export default function AddGoldForm({ onClose, editAssetId }: Props) {
         </button>
         
         <h2 className="text-xl font-semibold mb-6">
-          {editAssetId ? 'Edit Gold Asset' : 'Add Gold Asset'}
+          {initialData?.id ? 'Edit Gold Asset' : 'Add Gold Asset'}
         </h2>
 
-        {isFetching ? (
-          <div className="flex justify-center p-8">
-            <Loader2 className="w-8 h-8 animate-spin text-gold-400" />
-          </div>
-        ) : (
-          <>
+        <>
             {error && (
               <div className="bg-red-500/10 text-red-400 p-3 rounded-lg mb-4 text-sm">
                 {error}
@@ -143,12 +143,12 @@ export default function AddGoldForm({ onClose, editAssetId }: Props) {
               </div>
 
               <button type="submit" disabled={loading} className="btn-primary w-full mt-4">
-                {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : (editAssetId ? 'Update Gold Asset' : 'Save Gold Asset')}
+                {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : (initialData?.id ? 'Update Gold Asset' : 'Save Gold Asset')}
               </button>
             </form>
           </>
-        )}
       </div>
     </div>
   );
 }
+

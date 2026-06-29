@@ -11,13 +11,19 @@ public class PriceProviderFactory {
     private final GoldPriceProvider goldPriceProvider;
     private final FormulaBasedPriceProvider formulaBasedPriceProvider;
     private final StockPriceProvider stockPriceProvider;
+    private final MutualFundPriceProvider mutualFundPriceProvider;
+    private final RealEstatePriceProvider realEstatePriceProvider;
 
     public PriceProviderFactory(GoldPriceProvider goldPriceProvider, 
                                 FormulaBasedPriceProvider formulaBasedPriceProvider,
-                                StockPriceProvider stockPriceProvider) {
+                                StockPriceProvider stockPriceProvider,
+                                MutualFundPriceProvider mutualFundPriceProvider,
+                                RealEstatePriceProvider realEstatePriceProvider) {
         this.goldPriceProvider = goldPriceProvider;
         this.formulaBasedPriceProvider = formulaBasedPriceProvider;
         this.stockPriceProvider = stockPriceProvider;
+        this.mutualFundPriceProvider = mutualFundPriceProvider;
+        this.realEstatePriceProvider = realEstatePriceProvider;
     }
 
     public PriceProvider getProvider(AssetType assetType) {
@@ -26,6 +32,10 @@ public class PriceProviderFactory {
                 return goldPriceProvider;
             case STOCK:
                 return stockPriceProvider;
+            case MUTUAL_FUND:
+                return mutualFundPriceProvider;
+            case REAL_ESTATE:
+                return realEstatePriceProvider;
             case FIXED_DEPOSIT:
             case PPF:
             case RECURRING_DEPOSIT:

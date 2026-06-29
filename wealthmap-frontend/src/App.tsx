@@ -7,6 +7,7 @@ import Register from './pages/Register';
 import Dashboard from './pages/Dashboard';
 import Assets from './pages/Assets';
 import Family from './pages/Family';
+import Maturities from './pages/Maturities';
 import Profile from './pages/Profile';
 
 const queryClient = new QueryClient({
@@ -30,7 +31,7 @@ function App() {
             <Route path="/" element={<Dashboard />} />
             <Route path="/assets" element={<Assets />} />
             <Route path="/family" element={<Family />} />
-            <Route path="/maturities" element={<div className="text-white p-8">Maturities Coming Soon</div>} />
+            <Route path="/maturities" element={<Maturities />} />
             <Route path="/profile" element={<Profile />} />
           </Route>
 

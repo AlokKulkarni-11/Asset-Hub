@@ -3,6 +3,7 @@ package com.wealthmap.controller;
 import lombok.Data;
 
 import com.wealthmap.entity.FamilyGroup;
+import com.wealthmap.entity.FamilyInvite;
 import com.wealthmap.entity.User;
 import com.wealthmap.repository.UserRepository;
 import com.wealthmap.service.FamilyGroupService;
@@ -37,25 +38,56 @@ public class FamilyGroupController {
         }
     }
 
-    @PostMapping("/join")
-    public ResponseEntity<?> joinFamily(Authentication authentication, @RequestBody JoinFamilyRequest req) {
+    @PostMapping("/invite")
+    public ResponseEntity<?> inviteMember(Authentication authentication, @RequestBody InviteMemberRequest req) {
         String email = authentication.getName();
         User user = userRepository.findByEmail(email).orElseThrow();
         try {
-            FamilyGroup group = familyGroupService.joinFamilyByCode(user.getId(), req.getInviteCode());
-            return ResponseEntity.ok(group);
+            String message = familyGroupService.inviteMember(user.getId(), req.getName(), req.getEmail());
+            return ResponseEntity.ok(message);
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
 
-    @PostMapping("/add-member")
-    public ResponseEntity<?> addMemberByEmail(Authentication authentication, @RequestBody AddMemberRequest req) {
+    @PostMapping("/accept-invite")
+    public ResponseEntity<?> acceptInvite(Authentication authentication, @RequestBody AcceptInviteRequest req) {
         String email = authentication.getName();
         User user = userRepository.findByEmail(email).orElseThrow();
         try {
-            familyGroupService.addMemberByEmail(user.getId(), req.getEmail());
-            return ResponseEntity.ok().build();
+            familyGroupService.acceptInvite(user.getId(), req.getToken());
+            return ResponseEntity.ok("Successfully joined the family.");
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+
+    @PostMapping("/leave")
+    public ResponseEntity<?> leaveFamily(Authentication authentication) {
+        String email = authentication.getName();
+        User user = userRepository.findByEmail(email).orElseThrow();
+        try {
+            familyGroupService.leaveFamily(user.getId());
+            return ResponseEntity.ok("Successfully left the family.");
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+
+    @GetMapping("/invites")
+    public ResponseEntity<?> getMyInvites(Authentication authentication) {
+        String email = authentication.getName();
+        try {
+            List<FamilyInvite> invites = familyGroupService.getMyPendingInvites(email);
+            List<InviteResponse> response = invites.stream().map(i -> {
+                InviteResponse ir = new InviteResponse();
+                ir.setId(i.getId());
+                ir.setFamilyName(i.getFamilyGroup().getName());
+                ir.setToken(i.getToken());
+                ir.setCreatedAt(i.getCreatedAt().toString());
+                return ir;
+            }).collect(Collectors.toList());
+            return ResponseEntity.ok(response);
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
@@ -101,6 +133,12 @@ public class FamilyGroupController {
     @Autowired
     private com.wealthmap.service.assets.StockService stockService;
 
+    @Autowired
+    private com.wealthmap.service.assets.MutualFundService mfService;
+
+    @Autowired
+    private com.wealthmap.service.assets.RealEstateService reService;
+
     @GetMapping("/assets")
     public ResponseEntity<?> getFamilyAssets(Authentication authentication) {
         String email = authentication.getName();
@@ -120,6 +158,8 @@ public class FamilyGroupController {
             familyAssets.addAll(goldService.getAllGoldForUser(member.getEmail()));
             familyAssets.addAll(fdService.getAllFDsForUser(member.getEmail()));
             familyAssets.addAll(stockService.getAllStocksForUser(member.getEmail()));
+            familyAssets.addAll(mfService.getAllMutualFundsForUser(member.getEmail()));
+            familyAssets.addAll(reService.getAllRealEstateForUser(member.getEmail()));
         }
 
         return ResponseEntity.ok(familyAssets);
@@ -132,13 +172,22 @@ class CreateFamilyRequest {
 }
 
 @Data
-class JoinFamilyRequest {
-    private String inviteCode;
+class InviteMemberRequest {
+    private String name;
+    private String email;
 }
 
 @Data
-class AddMemberRequest {
-    private String email;
+class AcceptInviteRequest {
+    private String token;
+}
+
+@Data
+class InviteResponse {
+    private Long id;
+    private String familyName;
+    private String token;
+    private String createdAt;
 }
 
 @Data

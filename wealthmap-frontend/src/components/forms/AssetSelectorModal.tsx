@@ -3,6 +3,8 @@ import { X, Coins, TrendingUp, Building2, Landmark, Briefcase, Car } from 'lucid
 import AddGoldForm from './AddGoldForm';
 import AddFDForm from './AddFDForm';
 import AddStockForm from './AddStockForm';
+import AddMutualFundForm from './AddMutualFundForm';
+import AddRealEstateForm from './AddRealEstateForm';
 
 interface Props {
   onClose: () => void;
@@ -19,7 +21,7 @@ export default function AssetSelectorModal({ onClose }: Props) {
       title: 'Market Linked',
       items: [
         { id: 'STOCK', name: 'Stocks', icon: TrendingUp, comingSoon: false },
-        { id: 'MUTUAL_FUND', name: 'Mutual Funds', icon: Briefcase, comingSoon: true },
+        { id: 'MUTUAL_FUND', name: 'Mutual Funds', icon: Briefcase, comingSoon: false },
       ]
     },
     {
@@ -32,7 +34,7 @@ export default function AssetSelectorModal({ onClose }: Props) {
       title: 'Physical Assets',
       items: [
         { id: 'GOLD', name: 'Physical Gold', icon: Coins, comingSoon: false },
-        { id: 'REAL_ESTATE', name: 'Real Estate', icon: Building2, comingSoon: true },
+        { id: 'REAL_ESTATE', name: 'Real Estate', icon: Building2, comingSoon: false },
       ]
     }
   ];
@@ -49,7 +51,13 @@ export default function AssetSelectorModal({ onClose }: Props) {
     return <AddStockForm onClose={onClose} />;
   }
 
-  // Placeholder for other forms
+  if (selectedType === 'MUTUAL_FUND') {
+    return <AddMutualFundForm onClose={onClose} />;
+  }
+
+  if (selectedType === 'REAL_ESTATE') {
+    return <AddRealEstateForm onClose={onClose} />;
+  }
   if (selectedType) {
     return (
       <div className="fixed inset-0 bg-navy-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">

@@ -40,7 +40,7 @@ public class FormulaBasedPriceProvider implements PriceProvider {
         // A = P(1 + r/n)^(nt)
         double p = fd.getPrincipalAmount().doubleValue();
         double r = fd.getInterestRate().doubleValue() / 100.0;
-        int n = fd.getCompoundingFrequency().getPeriodsPerYear();
+        int n = fd.getCompoundingFrequency() != null ? fd.getCompoundingFrequency().getPeriodsPerYear() : 1;
         
         double amount = p * Math.pow(1 + (r / n), n * yearsElapsed);
         

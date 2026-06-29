@@ -13,5 +13,6 @@ public enum AssetType {
     VEHICLE,
     SOVEREIGN_GOLD_BOND,
     LIC_POLICY,
-    POST_OFFICE_SCHEME
+    POST_OFFICE_SCHEME,
+    REAL_ESTATE
 }

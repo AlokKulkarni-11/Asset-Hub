@@ -31,6 +31,7 @@ public class FixedDepositService {
 
         FixedDeposit fd = new FixedDeposit();
         fd.setUser(user);
+        fd.setFamilyGroup(user.getFamilyGroup());
         fd.setName(request.getName());
         fd.setAssetType(AssetType.FIXED_DEPOSIT);
         fd.setPurchaseDate(request.getStartDate());
@@ -82,6 +83,7 @@ public class FixedDepositService {
         return mapToResponse(saved);
     }
 
+    @org.springframework.transaction.annotation.Transactional(readOnly = true)
     public List<AssetResponse> getAllFDsForUser(String userEmail) {
         User user = userRepository.findByEmail(userEmail)
                 .orElseThrow(() -> new RuntimeException("User not found"));
