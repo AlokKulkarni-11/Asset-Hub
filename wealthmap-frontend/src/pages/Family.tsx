@@ -14,6 +14,7 @@ export default function Family() {
   const [createName, setCreateName] = useState('');
   const [inviteName, setInviteName] = useState('');
   const [inviteEmail, setInviteEmail] = useState('');
+  const [inviteMessage, setInviteMessage] = useState<{type: 'success' | 'error', text: string} | null>(null);
   const [selectedSector, setSelectedSector] = useState<string | null>(null);
   const [selectedMemberIds, setSelectedMemberIds] = useState<number[]>([]);
   const [dropdownOpen, setDropdownOpen] = useState(false);
@@ -51,10 +52,10 @@ export default function Family() {
     onSuccess: (message) => {
       setInviteName('');
       setInviteEmail('');
-      alert(message);
+      setInviteMessage({ type: 'success', text: message });
     },
     onError: (err: any) => {
-      alert(err.response?.data || 'Failed to send invitation');
+      setInviteMessage({ type: 'error', text: err.response?.data || 'Failed to send invitation' });
     }
   });
 
@@ -432,6 +433,11 @@ export default function Family() {
                     {inviteMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : 
                       <><Mail className="w-4 h-4" /> Send Email Invitation</>}
                   </button>
+                  {inviteMessage && (
+                    <div className={`mt-3 p-3 rounded-lg text-sm border ${inviteMessage.type === 'success' ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400' : 'bg-red-500/10 border-red-500/20 text-red-400'}`}>
+                      {inviteMessage.text}
+                    </div>
+                  )}
                 </div>
               </div>
             )}

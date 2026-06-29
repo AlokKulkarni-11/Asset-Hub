@@ -91,20 +91,29 @@ public class FamilyGroupService {
 
         familyInviteRepository.save(invite);
 
-        // Send Email
-        boolean emailSent = sendInviteEmail(creator, inviteeName, inviteeEmail, group.getName(), invite.getToken());
-        
-        if (emailSent) {
-            return "Invitation created and email sent successfully.";
-        } else {
-            return "Invitation created on the platform, but the email failed to send. Please check your SMTP configuration.";
+        String frontendUrl = System.getenv("FRONTEND_URL");
+        if (frontendUrl == null || frontendUrl.isEmpty()) {
+            frontendUrl = "https://asset-hub-3jo7.vercel.app";
         }
+        String acceptLink = frontendUrl + "/family?invite_token=" + invite.getToken();
+
+        // Skip email if default credentials are still in place to prevent 60-second timeouts
+        if (systemEmail == null || systemEmail.contains("your-email@gmail.com") || systemEmail.isEmpty()) {
+            return "Invite created! Email sending is disabled because SMTP is not configured. Share this link manually: " + acceptLink;
+        }
+
+        // Send Email asynchronously
+        java.util.concurrent.CompletableFuture.runAsync(() -> {
+            sendInviteEmail(creator, inviteeName, inviteeEmail, group.getName(), invite.getToken(), acceptLink);
+        });
+        
+        return "Invitation created successfully. An email will be sent in the background. Or share this link manually: " + acceptLink;
     }
 
-    private boolean sendInviteEmail(User creator, String inviteeName, String inviteeEmail, String familyName, String token) {
+    private boolean sendInviteEmail(User creator, String inviteeName, String inviteeEmail, String familyName, String token, String acceptLink) {
         try {
-            MimeMessage message = mailSender.createMimeMessage();
-            MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
+            jakarta.mail.internet.MimeMessage message = mailSender.createMimeMessage();
+            org.springframework.mail.javamail.MimeMessageHelper helper = new org.springframework.mail.javamail.MimeMessageHelper(message, true, "UTF-8");
 
             helper.setTo(inviteeEmail);
             helper.setSubject("You've been invited to join " + familyName + " on Asset Hub!");
@@ -116,8 +125,6 @@ public class FamilyGroupService {
             if (systemEmail != null && !systemEmail.isEmpty()) {
                 helper.setFrom(systemEmail, "Asset Hub Invitations");
             }
-
-            String acceptLink = "http://localhost:5173/family?invite_token=" + token;
 
             String htmlContent = "<h2>Hello " + inviteeName + ",</h2>" +
                     "<p><b>" + creator.getName() + "</b> (" + creator.getEmail() + ") has invited you to join their family group <b>" + familyName + "</b> on Asset Hub.</p>" +
