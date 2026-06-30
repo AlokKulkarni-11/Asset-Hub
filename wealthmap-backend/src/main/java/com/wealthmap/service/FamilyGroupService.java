@@ -8,11 +8,8 @@ import com.wealthmap.repository.FamilyInviteRepository;
 import com.wealthmap.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.mail.javamail.JavaMailSender;
-import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import jakarta.mail.internet.MimeMessage;
 
 import java.util.List;
 import java.util.UUID;
@@ -30,9 +27,9 @@ public class FamilyGroupService {
     private FamilyInviteRepository familyInviteRepository;
 
     @Autowired
-    private JavaMailSender mailSender;
+    private EmailService emailService;
     
-    @Value("${spring.mail.username:}")
+    @Value("${brevo.sender.email:}")
     private String systemEmail;
 
     @Transactional
@@ -47,11 +44,10 @@ public class FamilyGroupService {
         FamilyGroup group = new FamilyGroup();
         group.setName(familyName);
         group.setCreatorId(creatorId);
-        group.setInviteCode(UUID.randomUUID().toString().substring(0, 6).toUpperCase()); // Kept for legacy/db constraints but unused
+        group.setInviteCode(UUID.randomUUID().toString().substring(0, 6).toUpperCase());
         
         FamilyGroup savedGroup = familyGroupRepository.save(group);
         
-        // Add creator to group
         creator.setFamilyGroup(savedGroup);
         userRepository.save(creator);
         
@@ -68,20 +64,17 @@ public class FamilyGroupService {
             throw new RuntimeException("Only the family creator can invite members.");
         }
 
-        // Optional: Check if user already exists and is in a family
         userRepository.findByEmail(inviteeEmail).ifPresent(u -> {
             if (u.getFamilyGroup() != null) {
                 throw new RuntimeException("Target user is already in a family group.");
             }
         });
 
-        // Check if there's already a pending invite
         List<FamilyInvite> existingInvites = familyInviteRepository.findByInviteeEmailAndStatus(inviteeEmail, "PENDING");
         if (!existingInvites.isEmpty()) {
             throw new RuntimeException("An invitation has already been sent to this email.");
         }
 
-        // Create the invite
         FamilyInvite invite = new FamilyInvite();
         invite.setFamilyGroup(group);
         invite.setInviteeEmail(inviteeEmail);
@@ -97,52 +90,16 @@ public class FamilyGroupService {
         }
         String acceptLink = frontendUrl + "/family?invite_token=" + invite.getToken();
 
-        // Skip email if default credentials are still in place to prevent 60-second timeouts
-        if (systemEmail == null || systemEmail.contains("your-email@gmail.com") || systemEmail.isEmpty()) {
-            return "Invite created! Email sending is disabled because SMTP is not configured. Share this link manually: " + acceptLink;
+        if (systemEmail == null || systemEmail.isEmpty()) {
+            return "Invite created! Email sending is disabled because API key is not configured. Share this link manually: " + acceptLink;
         }
 
         // Send Email asynchronously
         java.util.concurrent.CompletableFuture.runAsync(() -> {
-            sendInviteEmail(creator, inviteeName, inviteeEmail, group.getName(), invite.getToken(), acceptLink);
+            emailService.sendFamilyInviteEmail(inviteeEmail, inviteeName, creator.getName(), creator.getEmail(), group.getName(), acceptLink);
         });
         
         return "Invitation created successfully. An email will be sent in the background. Or share this link manually: " + acceptLink;
-    }
-
-    private boolean sendInviteEmail(User creator, String inviteeName, String inviteeEmail, String familyName, String token, String acceptLink) {
-        try {
-            jakarta.mail.internet.MimeMessage message = mailSender.createMimeMessage();
-            org.springframework.mail.javamail.MimeMessageHelper helper = new org.springframework.mail.javamail.MimeMessageHelper(message, true, "UTF-8");
-
-            helper.setTo(inviteeEmail);
-            helper.setSubject("You've been invited to join " + familyName + " on Asset Hub!");
-            
-            // Set Reply-To to the creator's email so replies go directly to them
-            helper.setReplyTo(creator.getEmail());
-            
-            // Since we must send FROM the authenticated system account, we do so:
-            if (systemEmail != null && !systemEmail.isEmpty()) {
-                helper.setFrom(systemEmail, "Asset Hub Invitations");
-            }
-
-            String htmlContent = "<h2>Hello " + inviteeName + ",</h2>" +
-                    "<p><b>" + creator.getName() + "</b> (" + creator.getEmail() + ") has invited you to join their family group <b>" + familyName + "</b> on Asset Hub.</p>" +
-                    "<p>By joining, you will be able to pool your asset tracking and monitor your family's combined net worth!</p>" +
-                    "<br/>" +
-                    "<a href=\"" + acceptLink + "\" style=\"background-color:#D4A843; color:black; padding:10px 20px; text-decoration:none; border-radius:5px; font-weight:bold;\">Accept Invitation</a>" +
-                    "<br/><br/><p>If the button doesn't work, copy and paste this link into your browser:</p>" +
-                    "<p>" + acceptLink + "</p>";
-
-            helper.setText(htmlContent, true);
-
-            mailSender.send(message);
-            return true;
-        } catch (Exception e) {
-            e.printStackTrace();
-            System.err.println("Failed to send invitation email. Please check email configuration.");
-            return false;
-        }
     }
 
     @Transactional
