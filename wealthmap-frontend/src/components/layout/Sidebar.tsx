@@ -1,5 +1,5 @@
 import React from 'react';
-import { NavLink } from 'react-router-dom';
+import { NavLink, Link } from 'react-router-dom';
 import { LayoutDashboard, Wallet, Users, Calendar, Settings, LogOut } from 'lucide-react';
 import { useAuthStore } from '../../store/authStore';
 
@@ -16,18 +16,17 @@ export default function Sidebar({ className = '', onLinkClick }: SidebarProps) {
     { name: 'Assets', path: '/assets', icon: Wallet },
     { name: 'Family', path: '/family', icon: Users },
     { name: 'Upcoming', path: '/maturities', icon: Calendar },
-    { name: 'Profile', path: '/profile', icon: Settings },
   ];
 
   return (
     <aside className={className}>
       <div className="p-6 flex items-center shrink-0">
-        <h1 className="text-2xl font-bold font-dmsans text-transparent bg-clip-text bg-gradient-to-r from-accent-400 to-accent-400 flex items-center gap-4 whitespace-nowrap">
-          <Wallet className="w-8 h-8 text-accent-500 shrink-0" />
-          <span className="opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity duration-300">
-            Asset Hub
-          </span>
-        </h1>
+        <Link to="/profile" onClick={onLinkClick} className="hover:opacity-80 transition-opacity cursor-pointer">
+          <h1 className="flex items-center gap-4 whitespace-nowrap overflow-hidden">
+            <img src="/AssetHub_Logo.png" alt="AssetHub Logo" className="w-8 h-8 shrink-0 object-contain" />
+            <img src="/AssetHub_Name.png" alt="Asset Hub" className="h-6 object-contain opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity duration-300" />
+          </h1>
+        </Link>
       </div>
       
       <nav className="flex-1 px-4 space-y-2 mt-4 overflow-y-auto overflow-x-hidden">
