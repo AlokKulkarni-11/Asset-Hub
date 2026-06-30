@@ -1,27 +1,55 @@
 package com.wealthmap.service;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.mail.SimpleMailMessage;
-import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.stereotype.Service;
+
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+import java.time.Duration;
 
 @Service
 public class EmailService {
 
-    @Autowired
-    private JavaMailSender mailSender;
+    @Value("${brevo.api.key}")
+    private String apiKey;
 
-    @Value("${spring.mail.username}")
-    private String fromEmail;
+    @Value("${brevo.sender.email}")
+    private String senderEmail;
 
     public void sendOtpEmail(String toEmail, String otp) {
-        SimpleMailMessage message = new SimpleMailMessage();
-        message.setFrom(fromEmail);
-        message.setTo(toEmail);
-        message.setSubject("WealthMap - Password Reset Verification Code");
-        message.setText("Your password reset verification code is: " + otp + "\n\nThis code will expire in 15 minutes.\n\nIf you did not request this, please ignore this email.");
+        try {
+            String jsonPayload = """
+                {
+                    "sender": { "name": "WealthMap", "email": "%s" },
+                    "to": [{ "email": "%s" }],
+                    "subject": "WealthMap - Password Reset Verification Code",
+                    "htmlContent": "<html><body><h2>Password Reset</h2><p>Your verification code is: <strong>%s</strong></p><p>This code will expire in 15 minutes.</p></body></html>"
+                }
+                """.formatted(senderEmail, toEmail, otp);
 
-        mailSender.send(message);
+            HttpClient client = HttpClient.newBuilder()
+                    .connectTimeout(Duration.ofSeconds(10))
+                    .build();
+
+            HttpRequest request = HttpRequest.newBuilder()
+                    .uri(URI.create("https://api.brevo.com/v3/smtp/email"))
+                    .header("accept", "application/json")
+                    .header("api-key", apiKey)
+                    .header("content-type", "application/json")
+                    .POST(HttpRequest.BodyPublishers.ofString(jsonPayload))
+                    .build();
+
+            HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+
+            if (response.statusCode() != 201 && response.statusCode() != 200) {
+                System.err.println("Failed to send email via Brevo. Status: " + response.statusCode() + " Body: " + response.body());
+                throw new RuntimeException("Failed to send email via Email API.");
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            throw new RuntimeException("Error sending OTP email: " + e.getMessage());
+        }
     }
 }
