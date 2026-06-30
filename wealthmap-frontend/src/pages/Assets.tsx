@@ -153,7 +153,7 @@ export default function Assets() {
             const gainLoss = data.totalCurrentValue - data.totalInvested;
             const gainPercent = data.totalInvested > 0 ? (gainLoss / data.totalInvested) * 100 : 0;
             const isCategoryExpanded = expandedCategory === category;
-            const displayName = category.replace('_', ' ');
+            const displayName = category.toLowerCase().replace('_', ' ');
 
             // Calculate total assets in category
             const totalAssetsInCat = Object.values(data.subGroups).reduce((sum: number, sg: any) => sum + sg.assets.length, 0);

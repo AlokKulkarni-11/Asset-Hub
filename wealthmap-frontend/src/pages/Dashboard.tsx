@@ -32,31 +32,118 @@ export default function Dashboard() {
     }).catch(console.error);
   }, [queryClient]);
 
-  // Time Range Filter Logic - MUST BE BEFORE EARLY RETURN
-  const [timeRange, setTimeRange] = useState('ALL');
-  
-  const filteredSnapshots = React.useMemo(() => {
-    if (!snapshots) return [];
-    if (timeRange === 'ALL') return snapshots;
+  // Define filteredAssets before it's used in useMemo
+  const filteredAssets = assets || [];
 
-    const cutoffDate = new Date();
+  // Time Range Filter Logic - MUST BE BEFORE EARLY RETURN
+  const [timeRange, setTimeRange] = useState('Day');
+  
+  const chartData = React.useMemo(() => {
+    if (!filteredAssets || filteredAssets.length === 0) return [];
+
+    const today = new Date();
+    
+    // 1. Find earliest purchase date
+    let earliestDate = new Date();
+    filteredAssets.forEach(a => {
+      if (a.purchaseDate) {
+        const pd = new Date(a.purchaseDate);
+        if (pd < earliestDate) earliestDate = pd;
+      }
+    });
+
+    // 2. Determine absolute start date based on timeRange
+    let rangeStartDate = new Date();
     switch (timeRange) {
-      case '1M':
-        cutoffDate.setMonth(cutoffDate.getMonth() - 1);
-        break;
-      case '3M':
-        cutoffDate.setMonth(cutoffDate.getMonth() - 3);
-        break;
-      case '6M':
-        cutoffDate.setMonth(cutoffDate.getMonth() - 6);
-        break;
-      case '1Y':
-        cutoffDate.setFullYear(cutoffDate.getFullYear() - 1);
-        break;
+      case 'Day': rangeStartDate.setMonth(rangeStartDate.getMonth() - 1); break;
+      case 'Month': rangeStartDate.setFullYear(rangeStartDate.getFullYear() - 1); break;
+      case '3 Month': rangeStartDate.setFullYear(rangeStartDate.getFullYear() - 2); break;
+      case '6 Month': rangeStartDate.setFullYear(rangeStartDate.getFullYear() - 4); break;
+      case 'Year': rangeStartDate.setFullYear(rangeStartDate.getFullYear() - 10); break;
     }
 
-    return snapshots.filter((s: any) => new Date(s.date) >= cutoffDate);
-  }, [snapshots, timeRange]);
+    // 3. Start from the later of the two dates so the graph doesn't show 10 years of flat 0 if they bought yesterday.
+    let actualStart = earliestDate < rangeStartDate ? rangeStartDate : earliestDate;
+    
+    // Generate nodes
+    const nodes: Date[] = [];
+    let current = new Date(actualStart);
+    
+    // Floor the current date based on the interval so nodes are clean (e.g. 1st of month)
+    if (timeRange !== 'Day') {
+        current.setDate(1); // Start at 1st of the month
+        if (timeRange === 'Year') current.setMonth(0);
+    }
+
+    while (current <= today) {
+      nodes.push(new Date(current));
+      if (timeRange === 'Day') {
+        current.setDate(current.getDate() + 1);
+      } else if (timeRange === 'Month') {
+        current.setMonth(current.getMonth() + 1);
+      } else if (timeRange === '3 Month') {
+        current.setMonth(current.getMonth() + 3);
+      } else if (timeRange === '6 Month') {
+        current.setMonth(current.getMonth() + 6);
+      } else if (timeRange === 'Year') {
+        current.setFullYear(current.getFullYear() + 1);
+      }
+    }
+    
+    // Ensure today is always the final node for accurate current value
+    if (nodes.length === 0 || nodes[nodes.length - 1].getTime() !== today.getTime()) {
+      nodes.push(new Date(today));
+    }
+
+    // 4. Calculate interpolated values for each node
+    return nodes.map(nodeDate => {
+      let totalInvested = 0;
+      let totalNetWorth = 0;
+
+      filteredAssets.forEach(a => {
+        if (!a.purchaseDate) return;
+        const purchaseDate = new Date(a.purchaseDate);
+        
+        if (purchaseDate <= nodeDate) {
+          const invested = Number(a.investedAmount) || 0;
+          const currentVal = Number(a.currentValue) || invested;
+          totalInvested += invested;
+          
+          // Calculate linear interpolation of gain
+          const totalDaysHeld = Math.max(1, (today.getTime() - purchaseDate.getTime()) / (1000 * 3600 * 24));
+          const daysHeldAtNode = Math.max(0, (nodeDate.getTime() - purchaseDate.getTime()) / (1000 * 3600 * 24));
+          
+          const ratio = daysHeldAtNode / totalDaysHeld;
+          const gain = currentVal - invested;
+          
+          totalNetWorth += invested + (gain * ratio);
+        }
+      });
+
+      // Format display date
+      let displayDate = '';
+      if (timeRange === 'Day') {
+        displayDate = nodeDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+      } else if (timeRange === 'Month') {
+        displayDate = nodeDate.toLocaleDateString('en-US', { month: 'short', year: '2-digit' });
+      } else if (timeRange === '3 Month') {
+        const quarter = Math.floor(nodeDate.getMonth() / 3) + 1;
+        displayDate = `Q${quarter} '${nodeDate.getFullYear().toString().slice(2)}`;
+      } else if (timeRange === '6 Month') {
+        const half = Math.floor(nodeDate.getMonth() / 6) + 1;
+        displayDate = `H${half} '${nodeDate.getFullYear().toString().slice(2)}`;
+      } else if (timeRange === 'Year') {
+        displayDate = nodeDate.getFullYear().toString();
+      }
+
+      return {
+        date: nodeDate.toISOString(),
+        displayDate,
+        totalInvested,
+        totalNetWorth
+      };
+    });
+  }, [filteredAssets, timeRange]);
 
   if (assetsLoading || snapshotsLoading) {
     return (
@@ -65,9 +152,6 @@ export default function Dashboard() {
       </div>
     );
   }
-
-  // Assets are strictly personal now
-  const filteredAssets = assets;
 
   const totalInvested = filteredAssets?.reduce((sum, asset) => sum + (asset.investedAmount || 0), 0) || 0;
   const totalCurrentValue = filteredAssets?.reduce((sum, asset) => sum + (asset.currentValue || 0), 0) || 0;
@@ -133,8 +217,8 @@ export default function Dashboard() {
         <div className="lg:col-span-2 glass-card p-6 min-h-[400px]">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-6 gap-4">
             <h3 className="text-lg font-medium">Historical Net Worth</h3>
-            <div className="flex gap-1 p-1 bg-surface-hover rounded-lg border border-border">
-              {['1M', '3M', '6M', '1Y', 'ALL'].map(range => (
+            <div className="flex flex-wrap gap-1 p-1 bg-surface-hover rounded-lg border border-border">
+              {['Day', 'Month', '3 Month', '6 Month', 'Year'].map(range => (
                 <button 
                   key={range}
                   onClick={() => setTimeRange(range)}
@@ -146,17 +230,17 @@ export default function Dashboard() {
             </div>
           </div>
 
-          {filteredSnapshots?.length === 0 ? (
+          {chartData?.length === 0 ? (
             <div className="h-[300px] flex items-center justify-center text-text-muted">
               No historical data available for this range.
             </div>
           ) : (
             <div className="h-[300px]">
               <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={filteredSnapshots}>
+                <LineChart data={chartData}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#CBD5E1" vertical={false} />
                   <XAxis 
-                    dataKey="date" 
+                    dataKey="displayDate" 
                     stroke="#64748B" 
                     tick={{fill: '#64748B', fontSize: 12}}
                     tickMargin={10}
@@ -176,16 +260,16 @@ export default function Dashboard() {
                     type="monotone" 
                     dataKey="totalNetWorth" 
                     name="Net Worth"
-                    stroke="#D4A843" 
+                    stroke="#0EA5E9" 
                     strokeWidth={3}
-                    dot={{ fill: '#D4A843', strokeWidth: 2, r: 4 }}
-                    activeDot={{ r: 6, fill: '#E8C265' }}
+                    dot={{ fill: '#0EA5E9', strokeWidth: 2, r: 4 }}
+                    activeDot={{ r: 6, fill: '#38BDF8' }}
                   />
                   <Line 
                     type="monotone" 
                     dataKey="totalInvested" 
                     name="Invested"
-                    stroke="#3B82F6" 
+                    stroke="#6366F1" 
                     strokeWidth={2}
                     dot={false}
                   />

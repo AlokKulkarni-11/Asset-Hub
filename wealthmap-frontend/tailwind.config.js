@@ -33,8 +33,9 @@ export default {
         }
       },
       fontFamily: {
-        inter: ['Inter', 'sans-serif'],
-        dmsans: ['DM Sans', 'sans-serif'],
+        sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+        inter: ['"Plus Jakarta Sans"', 'sans-serif'],
+        dmsans: ['"Plus Jakarta Sans"', 'sans-serif'],
       }
     },
   },
