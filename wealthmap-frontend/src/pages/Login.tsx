@@ -6,6 +6,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { Shield, Mail, Lock, Loader2 } from 'lucide-react';
 import api from '../api/axios';
 import { useAuthStore } from '../store/authStore';
+import ForgotPasswordModal from '../components/forms/ForgotPasswordModal';
 
 const loginSchema = z.object({
   email: z.string().email('Invalid email address'),
@@ -21,6 +22,8 @@ export default function Login() {
   
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [showForgotModal, setShowForgotModal] = useState(false);
+  
   const login = useAuthStore((state) => state.login);
   const navigate = useNavigate();
 
@@ -30,8 +33,8 @@ export default function Login() {
       setError(null);
       const res = await api.post('/auth/login', data);
       
-      const { token, id, email, name } = res.data;
-      login(token, { id, email, name });
+      const { token, id, email, name, mobileNumber } = res.data;
+      login(token, { id, email, name, mobileNumber });
       
       navigate('/');
     } catch (err: any) {
@@ -85,7 +88,18 @@ export default function Login() {
                 className="glass-input pl-10"
               />
             </div>
-            {errors.password && <p className="text-red-400 text-xs mt-1 ml-1">{errors.password.message}</p>}
+            <div className="flex justify-between items-center mt-1 ml-1">
+              {errors.password ? (
+                <p className="text-red-400 text-xs">{errors.password.message}</p>
+              ) : <div/>}
+              <button 
+                type="button" 
+                onClick={() => setShowForgotModal(true)}
+                className="text-accent-500 text-xs hover:text-gold-300 transition-colors"
+              >
+                Forgot Password?
+              </button>
+            </div>
           </div>
 
           <button
@@ -104,6 +118,10 @@ export default function Login() {
           </Link>
         </div>
       </div>
+
+      {showForgotModal && (
+        <ForgotPasswordModal onClose={() => setShowForgotModal(false)} />
+      )}
     </div>
   );
 }

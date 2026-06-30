@@ -1,11 +1,14 @@
+C:\Users\alokk\OneDrive\Desktop\WealthMap\wealthmap-backend\src\main\java\com\wealthmap\dto\request\ForgotPasswordRequest.java
 C:\Users\alokk\OneDrive\Desktop\WealthMap\wealthmap-backend\src\main\java\com\wealthmap\dto\response\AssetResponse.java
 C:\Users\alokk\OneDrive\Desktop\WealthMap\wealthmap-backend\src\main\java\com\wealthmap\dto\response\AuthResponse.java
+C:\Users\alokk\OneDrive\Desktop\WealthMap\wealthmap-backend\src\main\java\com\wealthmap\entity\PasswordResetToken.java
 C:\Users\alokk\OneDrive\Desktop\WealthMap\wealthmap-backend\src\main\java\com\wealthmap\service\SnapshotService.java
 C:\Users\alokk\OneDrive\Desktop\WealthMap\wealthmap-backend\src\main\java\com\wealthmap\controller\FixedIncomeController.java
 C:\Users\alokk\OneDrive\Desktop\WealthMap\wealthmap-backend\src\main\java\com\wealthmap\entity\MutualFund.java
 C:\Users\alokk\OneDrive\Desktop\WealthMap\wealthmap-backend\src\main\java\com\wealthmap\dto\response\StockResponse.java
 C:\Users\alokk\OneDrive\Desktop\WealthMap\wealthmap-backend\src\main\java\com\wealthmap\dto\request\FamilyMemberRequest.java
 C:\Users\alokk\OneDrive\Desktop\WealthMap\wealthmap-backend\src\main\java\com\wealthmap\dto\request\PasswordChangeRequest.java
+C:\Users\alokk\OneDrive\Desktop\WealthMap\wealthmap-backend\src\main\java\com\wealthmap\service\PasswordResetService.java
 C:\Users\alokk\OneDrive\Desktop\WealthMap\wealthmap-backend\src\main\java\com\wealthmap\service\UserService.java
 C:\Users\alokk\OneDrive\Desktop\WealthMap\wealthmap-backend\src\main\java\com\wealthmap\controller\MarketController.java
 C:\Users\alokk\OneDrive\Desktop\WealthMap\wealthmap-backend\src\main\java\com\wealthmap\service\FamilyGroupService.java
@@ -14,6 +17,7 @@ C:\Users\alokk\OneDrive\Desktop\WealthMap\wealthmap-backend\src\main\java\com\we
 C:\Users\alokk\OneDrive\Desktop\WealthMap\wealthmap-backend\src\main\java\com\wealthmap\controller\SnapshotController.java
 C:\Users\alokk\OneDrive\Desktop\WealthMap\wealthmap-backend\src\main\java\com\wealthmap\service\price\FormulaBasedPriceProvider.java
 C:\Users\alokk\OneDrive\Desktop\WealthMap\wealthmap-backend\src\main\java\com\wealthmap\DataMigrationRunner.java
+C:\Users\alokk\OneDrive\Desktop\WealthMap\wealthmap-backend\src\main\java\com\wealthmap\service\EmailService.java
 C:\Users\alokk\OneDrive\Desktop\WealthMap\wealthmap-backend\src\main\java\com\wealthmap\dto\response\RealEstateResponse.java
 C:\Users\alokk\OneDrive\Desktop\WealthMap\wealthmap-backend\src\main\java\com\wealthmap\security\JwtUtil.java
 C:\Users\alokk\OneDrive\Desktop\WealthMap\wealthmap-backend\src\main\java\com\wealthmap\dto\request\ProfileUpdateRequest.java
@@ -21,6 +25,7 @@ C:\Users\alokk\OneDrive\Desktop\WealthMap\wealthmap-backend\src\main\java\com\we
 C:\Users\alokk\OneDrive\Desktop\WealthMap\wealthmap-backend\src\main\java\com\wealthmap\security\JwtAuthFilter.java
 C:\Users\alokk\OneDrive\Desktop\WealthMap\wealthmap-backend\src\main\java\com\wealthmap\enums\CompoundingFrequency.java
 C:\Users\alokk\OneDrive\Desktop\WealthMap\wealthmap-backend\src\main\java\com\wealthmap\entity\GoldPriceHistory.java
+C:\Users\alokk\OneDrive\Desktop\WealthMap\wealthmap-backend\src\main\java\com\wealthmap\repository\PasswordResetTokenRepository.java
 C:\Users\alokk\OneDrive\Desktop\WealthMap\wealthmap-backend\src\main\java\com\wealthmap\repository\UserRepository.java
 C:\Users\alokk\OneDrive\Desktop\WealthMap\wealthmap-backend\src\main\java\com\wealthmap\service\price\StockPriceProvider.java
 C:\Users\alokk\OneDrive\Desktop\WealthMap\wealthmap-backend\src\main\java\com\wealthmap\entity\FixedDeposit.java
@@ -64,6 +69,7 @@ C:\Users\alokk\OneDrive\Desktop\WealthMap\wealthmap-backend\src\main\java\com\we
 C:\Users\alokk\OneDrive\Desktop\WealthMap\wealthmap-backend\src\main\java\com\wealthmap\dto\response\MutualFundResponse.java
 C:\Users\alokk\OneDrive\Desktop\WealthMap\wealthmap-backend\src\main\java\com\wealthmap\WealthmapApplication.java
 C:\Users\alokk\OneDrive\Desktop\WealthMap\wealthmap-backend\src\main\java\com\wealthmap\entity\base\Asset.java
+C:\Users\alokk\OneDrive\Desktop\WealthMap\wealthmap-backend\src\main\java\com\wealthmap\dto\request\ResetPasswordRequest.java
 C:\Users\alokk\OneDrive\Desktop\WealthMap\wealthmap-backend\src\main\java\com\wealthmap\dto\request\RealEstateRequest.java
 C:\Users\alokk\OneDrive\Desktop\WealthMap\wealthmap-backend\src\main\java\com\wealthmap\dto\response\FamilyMemberResponse.java
 C:\Users\alokk\OneDrive\Desktop\WealthMap\wealthmap-backend\src\main\java\com\wealthmap\dto\response\FixedDepositResponse.java

@@ -1,5 +1,6 @@
 package com.wealthmap.controller;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import com.wealthmap.dto.request.LoginRequest;
 import com.wealthmap.dto.request.RegisterRequest;
 import com.wealthmap.dto.response.AuthResponse;
@@ -63,5 +64,28 @@ public class AuthController {
         String token = jwtUtil.generateToken(userDetails);
 
         return ResponseEntity.ok(new AuthResponse(token, user.getId(), user.getEmail(), user.getName(), user.getMobileNumber()));
+    }
+
+    @Autowired
+    private com.wealthmap.service.PasswordResetService passwordResetService;
+
+    @PostMapping("/forgot-password")
+    public ResponseEntity<?> forgotPassword(@Valid @RequestBody com.wealthmap.dto.request.ForgotPasswordRequest request) {
+        try {
+            passwordResetService.generateAndSendOtp(request.getEmail());
+            return ResponseEntity.ok("OTP sent to your email");
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+
+    @PostMapping("/reset-password")
+    public ResponseEntity<?> resetPassword(@Valid @RequestBody com.wealthmap.dto.request.ResetPasswordRequest request) {
+        try {
+            passwordResetService.verifyAndResetPassword(request.getEmail(), request.getOtp(), request.getNewPassword());
+            return ResponseEntity.ok("Password reset successfully");
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
     }
 }
