@@ -4,6 +4,7 @@ interface User {
   id: number;
   email: string;
   name: string;
+  mobileNumber?: string;
 }
 
 interface AuthState {

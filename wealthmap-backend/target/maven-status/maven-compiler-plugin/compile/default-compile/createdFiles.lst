@@ -5,6 +5,7 @@ com\wealthmap\config\CacheConfig.class
 com\wealthmap\service\price\PriceProvider.class
 com\wealthmap\dto\request\StockRequest.class
 com\wealthmap\service\price\MutualFundPriceProvider.class
+com\wealthmap\dto\request\PasswordChangeRequest.class
 com\wealthmap\service\price\RealEstatePriceProvider.class
 com\wealthmap\enums\CompoundingFrequency.class
 com\wealthmap\controller\AcceptInviteRequest.class
@@ -20,6 +21,7 @@ com\wealthmap\dto\response\AssetResponse.class
 com\wealthmap\dto\request\FamilyMemberRequest.class
 com\wealthmap\dto\response\GoldResponse.class
 com\wealthmap\entity\MutualFund.class
+com\wealthmap\controller\UserController.class
 com\wealthmap\entity\GoldPriceHistory.class
 com\wealthmap\service\price\StockPriceProvider.class
 com\wealthmap\controller\CreateFamilyRequest.class
@@ -43,6 +45,7 @@ com\wealthmap\dto\response\MutualFundResponse.class
 com\wealthmap\controller\FixedIncomeController.class
 com\wealthmap\dto\request\MutualFundRequest.class
 com\wealthmap\service\assets\GoldService.class
+com\wealthmap\service\UserService.class
 com\wealthmap\controller\AuthController.class
 com\wealthmap\dto\response\StockResponse.class
 com\wealthmap\entity\FixedDeposit.class
@@ -51,6 +54,7 @@ com\wealthmap\entity\FamilyInvite.class
 com\wealthmap\dto\request\LoginRequest.class
 com\wealthmap\entity\NetWorthSnapshot.class
 com\wealthmap\DataMigrationRunner.class
+com\wealthmap\dto\request\ProfileUpdateRequest.class
 com\wealthmap\repository\AssetRepository.class
 com\wealthmap\entity\FamilyGroup.class
 com\wealthmap\repository\FamilyGroupRepository.class

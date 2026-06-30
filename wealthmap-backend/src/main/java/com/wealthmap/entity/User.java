@@ -26,6 +26,9 @@ public class User {
     @Column(nullable = false)
     private String name;
 
+    @Column(name = "mobile_number")
+    private String mobileNumber;
+
     @CreationTimestamp
     private LocalDateTime createdAt;
 
