@@ -8,33 +8,36 @@ Most net-worth trackers are simple ledgers where you just type in a number. Asse
 ## 🛠️ Tech Stack
 **Frontend (Client-Side)**
 - **Framework:** React 19 + TypeScript + Vite
-- **Styling:** TailwindCSS (Premium dark-mode glassmorphism aesthetics)
+- **Styling:** TailwindCSS (Premium Light Blue glassmorphism aesthetics)
 - **State Management:** Zustand (Auth) + React Query (Server State/Caching)
 - **Routing:** React Router v7
 - **Forms:** React Hook Form + Zod (Validation)
 - **Icons:** Lucide React
+- **Data Visualization:** Recharts
 
 **Backend (Server-Side)**
 - **Framework:** Java 21 + Spring Boot 3.2
-- **Database:** PostgreSQL with Spring Data JPA & Hibernate
-- **Security:** Spring Security + Stateless JWT Authentication
+- **Database:** PostgreSQL (Supabase) with Spring Data JPA & Hibernate
+- **Security:** Spring Security + Stateless JWT Authentication + Row Level Security (RLS)
 - **Architecture:** Controller-Service-Repository pattern with Polymorphic DTOs for heterogeneous assets.
-- **Integrations:** Yahoo Finance API (Live Stock & Gold prices)
+- **Integrations:** Yahoo Finance API (Live Stock & Gold prices), JavaMailSender (Email Invites)
 
 ## ✅ What is Implemented
-- **Authentication:** Secure user registration, login, and JWT-based session management.
+- **Authentication & Security:** Secure user registration, login, JWT-based session management, and database-level RLS policies to strictly isolate user data.
 - **Polymorphic Data Models:** A unified `Asset` base table extending out to specialized tables (`gold_items`, `fixed_deposits`, `stocks`, `mutual_funds`, `real_estate`).
 - **Real-Time Pricing Engine:** 
   - **Stocks & Mutual Funds:** Live ticker fetching from Yahoo Finance.
   - **Gold:** Live Spot Gold (USD/Ounce) fetching, Forex INR conversion, and physical market premium logic.
   - **Fixed Deposits:** Dynamic accrual using exact compound interest formulas based on elapsed days.
-- **Asset Dashboard:** A sleek, glass-styled grid displaying individual assets, invested amounts, real-time current values, and net gain/loss percentages.
+- **Data Visualization & Dashboard:** A sleek, Light Blue glass-styled grid displaying individual assets, invested amounts, real-time current values, and net gain/loss percentages. Includes robust Recharts implementations:
+  - Historical Net Worth Line Chart with dynamic time-range filtering (1M, 3M, 6M, 1Y, ALL).
+  - Asset Allocation Pie Chart.
 - **Full CRUD:** Ability to securely add new assets, delete assets (with a custom confirmation UI), and update existing assets using dynamic pre-filled edit modals.
-- **Family Management:** Track assets owned by different family members under one master family dashboard, completely separated from your personal assets.
+- **Family Management:** Track assets owned by different family members under one master family dashboard, completely separated from your personal assets. Includes asynchronous Email Invitations with secure join links.
+- **Mobile Responsiveness:** Fully adaptive UI with a desktop sidebar and a dedicated Mobile Bottom Navigation Bar / Hamburger menu for smaller screens.
 - **Alerts & Maturities:** A dedicated Maturities page to track upcoming Fixed Deposit maturity dates with a countdown timer.
 
 ## 🚀 What is Left (Future Iterations)
-- **Data Visualization:** Implement `Recharts` to show historical net worth progression over time (Line charts) and portfolio diversification (Pie charts).
 - **Cryptocurrencies:** Add support for tracking Crypto assets using a live crypto API.
 - **Performance Optimization:** Add Redis caching layer for the external financial APIs to prevent rate-limiting on heavy traffic.
 - **Export Data:** Allow users to export their entire portfolio to CSV/PDF for tax purposes.

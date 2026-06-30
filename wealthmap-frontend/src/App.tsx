@@ -20,26 +20,30 @@ const queryClient = new QueryClient({
   },
 });
 
+import { ErrorBoundary } from './components/ErrorBoundary';
+
 function App() {
   return (
     <ThemeProvider defaultTheme="light">
       <QueryClientProvider client={queryClient}>
-        <BrowserRouter>
-          <Routes>
-            <Route path="/login" element={<Login />} />
-            <Route path="/register" element={<Register />} />
-            
-            <Route element={<AppLayout />}>
-              <Route path="/" element={<Dashboard />} />
-              <Route path="/assets" element={<Assets />} />
-              <Route path="/family" element={<Family />} />
-              <Route path="/maturities" element={<Maturities />} />
-              <Route path="/profile" element={<Profile />} />
-            </Route>
+        <ErrorBoundary>
+          <BrowserRouter>
+            <Routes>
+              <Route path="/login" element={<Login />} />
+              <Route path="/register" element={<Register />} />
+              
+              <Route element={<AppLayout />}>
+                <Route path="/" element={<Dashboard />} />
+                <Route path="/assets" element={<Assets />} />
+                <Route path="/family" element={<Family />} />
+                <Route path="/maturities" element={<Maturities />} />
+                <Route path="/profile" element={<Profile />} />
+              </Route>
 
-            <Route path="*" element={<Navigate to="/" replace />} />
-          </Routes>
-        </BrowserRouter>
+              <Route path="*" element={<Navigate to="/" replace />} />
+            </Routes>
+          </BrowserRouter>
+        </ErrorBoundary>
       </QueryClientProvider>
     </ThemeProvider>
   );

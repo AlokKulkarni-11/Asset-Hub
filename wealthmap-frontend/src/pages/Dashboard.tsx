@@ -32,6 +32,32 @@ export default function Dashboard() {
     }).catch(console.error);
   }, [queryClient]);
 
+  // Time Range Filter Logic - MUST BE BEFORE EARLY RETURN
+  const [timeRange, setTimeRange] = useState('ALL');
+  
+  const filteredSnapshots = React.useMemo(() => {
+    if (!snapshots) return [];
+    if (timeRange === 'ALL') return snapshots;
+
+    const cutoffDate = new Date();
+    switch (timeRange) {
+      case '1M':
+        cutoffDate.setMonth(cutoffDate.getMonth() - 1);
+        break;
+      case '3M':
+        cutoffDate.setMonth(cutoffDate.getMonth() - 3);
+        break;
+      case '6M':
+        cutoffDate.setMonth(cutoffDate.getMonth() - 6);
+        break;
+      case '1Y':
+        cutoffDate.setFullYear(cutoffDate.getFullYear() - 1);
+        break;
+    }
+
+    return snapshots.filter((s: any) => new Date(s.date) >= cutoffDate);
+  }, [snapshots, timeRange]);
+
   if (assetsLoading || snapshotsLoading) {
     return (
       <div className="flex items-center justify-center h-[50vh]">
@@ -57,31 +83,6 @@ export default function Dashboard() {
   };
 
   const isPositive = totalGain >= 0;
-
-  // Time Range Filter Logic
-  const [timeRange, setTimeRange] = useState('ALL');
-  const filteredSnapshots = React.useMemo(() => {
-    if (!snapshots) return [];
-    if (timeRange === 'ALL') return snapshots;
-
-    const cutoffDate = new Date();
-    switch (timeRange) {
-      case '1M':
-        cutoffDate.setMonth(cutoffDate.getMonth() - 1);
-        break;
-      case '3M':
-        cutoffDate.setMonth(cutoffDate.getMonth() - 3);
-        break;
-      case '6M':
-        cutoffDate.setMonth(cutoffDate.getMonth() - 6);
-        break;
-      case '1Y':
-        cutoffDate.setFullYear(cutoffDate.getFullYear() - 1);
-        break;
-    }
-
-    return snapshots.filter((s: any) => new Date(s.date) >= cutoffDate);
-  }, [snapshots, timeRange]);
 
   // Prepare Pie Chart Data
   const allocationData = filteredAssets?.reduce((acc: any, asset) => {
