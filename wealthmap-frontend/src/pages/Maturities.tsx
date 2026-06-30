@@ -53,7 +53,7 @@ export default function Maturities() {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-[50vh]">
-        <Loader2 className="w-8 h-8 animate-spin text-gold-400" />
+        <Loader2 className="w-8 h-8 animate-spin text-accent-500" />
       </div>
     );
   }
@@ -79,7 +79,7 @@ export default function Maturities() {
         </div>
         <div className="glass-card p-6">
            <div className="flex items-center gap-2 mb-2">
-            <TrendingUp className="w-4 h-4 text-gold-400" />
+            <TrendingUp className="w-4 h-4 text-accent-500" />
             <p className="text-text-secondary text-sm">Estimated Value (Next 30 Days)</p>
           </div>
           <h2 className="networth-amount text-4xl">{formatCurrency(totalUpcomingValue)}</h2>
@@ -90,7 +90,7 @@ export default function Maturities() {
         <h3 className="text-lg font-medium mb-6">Maturity Timeline</h3>
         
         {maturities.length === 0 ? (
-          <div className="text-center py-12 border border-dashed border-white/10 rounded-xl">
+          <div className="text-center py-12 border border-dashed border-border rounded-xl">
             <Clock className="w-8 h-8 text-white/20 mx-auto mb-3" />
             <p className="text-text-muted text-sm">No assets with upcoming maturity dates.</p>
           </div>
@@ -101,8 +101,8 @@ export default function Maturities() {
               const isUrgent = item.daysRemaining >= 0 && item.daysRemaining <= 30;
               const isSoon = item.daysRemaining > 30 && item.daysRemaining <= 90;
               
-              let borderColor = 'border-white/10';
-              let badgeColor = 'bg-navy-800 text-text-secondary';
+              let borderColor = 'border-border';
+              let badgeColor = 'bg-surface-hover text-text-secondary';
               let iconColor = 'text-white/40';
 
               if (isOverdue) {
@@ -110,9 +110,9 @@ export default function Maturities() {
                 badgeColor = 'bg-red-500/20 text-red-400';
                 iconColor = 'text-red-400';
               } else if (isUrgent) {
-                borderColor = 'border-gold-400/50';
-                badgeColor = 'bg-gold-400/20 text-gold-400';
-                iconColor = 'text-gold-400';
+                borderColor = 'border-accent-500/20';
+                badgeColor = 'bg-accent-500/10 text-accent-500';
+                iconColor = 'text-accent-500';
               } else if (isSoon) {
                 borderColor = 'border-yellow-500/30';
                 badgeColor = 'bg-yellow-500/10 text-yellow-300';
@@ -122,12 +122,12 @@ export default function Maturities() {
               return (
                 <div key={idx} className="relative flex items-center justify-between md:justify-normal md:odd:flex-row-reverse group is-active">
                   {/* Icon */}
-                  <div className={`flex items-center justify-center w-10 h-10 rounded-full border-4 border-navy-950 bg-navy-900 shadow shrink-0 md:order-1 md:group-odd:-translate-x-1/2 md:group-even:translate-x-1/2 z-10`}>
+                  <div className={`flex items-center justify-center w-10 h-10 rounded-full border-4 border-navy-950 bg-surface shadow shrink-0 md:order-1 md:group-odd:-translate-x-1/2 md:group-even:translate-x-1/2 z-10`}>
                     <Clock className={`w-4 h-4 ${iconColor}`} />
                   </div>
                   
                   {/* Card */}
-                  <div className={`w-[calc(100%-4rem)] md:w-[calc(50%-2.5rem)] bg-navy-900 border ${borderColor} p-5 rounded-xl shadow-xl transition-all hover:-translate-y-1`}>
+                  <div className={`w-[calc(100%-4rem)] md:w-[calc(50%-2.5rem)] bg-surface border ${borderColor} p-5 rounded-xl shadow-xl transition-all hover:-translate-y-1`}>
                     <div className="flex items-center justify-between mb-2">
                       <span className={`text-xs font-semibold px-2 py-1 rounded-md ${badgeColor}`}>
                         {isOverdue ? `${Math.abs(item.daysRemaining)} days overdue` : `In ${item.daysRemaining} days`}
@@ -145,16 +145,16 @@ export default function Maturities() {
                        </div>
                        <div>
                          <p className="text-xs text-text-muted mb-1">Est. Maturity</p>
-                         <p className="font-medium text-gold-400">{formatCurrency(item.estimatedAmount)}</p>
+                         <p className="font-medium text-accent-500">{formatCurrency(item.estimatedAmount)}</p>
                        </div>
                     </div>
 
                     <div className="mt-3 flex flex-wrap items-center gap-2">
-                       <div className="text-[10px] bg-navy-950 px-2 py-1 rounded border border-white/5 text-text-muted">
+                       <div className="text-[10px] bg-background px-2 py-1 rounded border border-white/5 text-text-muted">
                          Owner: {item.familyMemberName}
                        </div>
                        {item.interestRate && (
-                         <div className="text-[10px] bg-navy-950 px-2 py-1 rounded border border-white/5 text-text-muted">
+                         <div className="text-[10px] bg-background px-2 py-1 rounded border border-white/5 text-text-muted">
                            {item.interestRate}% Interest
                          </div>
                        )}

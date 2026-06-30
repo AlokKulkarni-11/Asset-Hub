@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { getMyFamily, createFamily, inviteMember, acceptInvite, getPendingInvites, getFamilyAssets, leaveFamily } from '../api/family.api';
-import { Plus, Users, UserPlus, Loader2, Link, DollarSign, Mail, LogOut, ChevronDown } from 'lucide-react';
+import { Plus, Users, UserPlus, Loader2, Link, DollarSign, Mail, LogOut, ChevronDown, CheckCircle2, Circle } from 'lucide-react';
 import { useAuthStore } from '../store/authStore';
 
 export default function Family() {
@@ -101,7 +101,7 @@ export default function Family() {
   if (familyLoading) {
     return (
       <div className="flex items-center justify-center h-[50vh]">
-        <Loader2 className="w-8 h-8 animate-spin text-gold-400" />
+        <Loader2 className="w-8 h-8 animate-spin text-accent-500" />
       </div>
     );
   }
@@ -118,8 +118,8 @@ export default function Family() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl">
           {/* Create Family */}
           <div className="glass-card p-8 flex flex-col items-center text-center">
-            <div className="w-16 h-16 rounded-full bg-gold-400/10 flex items-center justify-center mb-4">
-              <Users className="w-8 h-8 text-gold-400" />
+            <div className="w-16 h-16 rounded-full bg-accent-500/10 flex items-center justify-center mb-4">
+              <Users className="w-8 h-8 text-accent-500" />
             </div>
             <h2 className="text-xl font-medium mb-2">Create a Family Group</h2>
             <p className="text-text-secondary text-sm mb-6">Start a new family group and invite your spouse or children to track net worth together.</p>
@@ -142,7 +142,7 @@ export default function Family() {
           {/* Pending Invites */}
           <div className="glass-card p-8 flex flex-col">
             <div className="flex flex-col items-center text-center mb-6">
-              <div className="w-16 h-16 rounded-full bg-navy-900 border border-white/10 flex items-center justify-center mb-4">
+              <div className="w-16 h-16 rounded-full bg-surface border border-border flex items-center justify-center mb-4">
                 <Mail className="w-8 h-8 text-white" />
               </div>
               <h2 className="text-xl font-medium mb-2">Pending Invitations</h2>
@@ -151,14 +151,14 @@ export default function Family() {
             
             <div className="flex-1 overflow-y-auto space-y-3">
               {invitesLoading ? (
-                <div className="flex justify-center py-4"><Loader2 className="w-6 h-6 animate-spin text-gold-400" /></div>
+                <div className="flex justify-center py-4"><Loader2 className="w-6 h-6 animate-spin text-accent-500" /></div>
               ) : pendingInvites?.length === 0 ? (
-                <div className="text-center py-8 text-text-muted text-sm border border-dashed border-white/10 rounded-lg">
+                <div className="text-center py-8 text-text-muted text-sm border border-dashed border-border rounded-lg">
                   No pending invitations.
                 </div>
               ) : (
                 pendingInvites?.map(invite => (
-                  <div key={invite.id} className="bg-navy-900 p-4 rounded-xl border border-white/10 flex items-center justify-between">
+                  <div key={invite.id} className="bg-surface p-4 rounded-xl border border-border flex items-center justify-between">
                     <div>
                       <p className="font-medium text-gold-300">{invite.familyName}</p>
                       <p className="text-xs text-text-secondary">Sent: {new Date(invite.createdAt).toLocaleDateString()}</p>
@@ -222,7 +222,7 @@ export default function Family() {
             <span className="text-text-secondary text-sm mr-3">Filter by Member:</span>
             <button
               onClick={() => setDropdownOpen(!dropdownOpen)}
-              className="bg-navy-900 border border-white/20 text-white rounded-lg py-1.5 px-4 text-sm flex items-center justify-between min-w-[200px] focus:outline-none hover:border-white/40 transition-colors"
+              className="bg-surface border border-border text-primary rounded-lg py-1.5 px-4 text-sm flex items-center justify-between min-w-[200px] focus:outline-none hover:border-accent-500/50 transition-colors"
             >
               <span>
                 {selectedMemberIds.length === 0 
@@ -233,28 +233,27 @@ export default function Family() {
             </button>
 
             {dropdownOpen && (
-              <div className="absolute top-full left-[120px] mt-2 w-64 bg-navy-800 border border-white/10 rounded-lg shadow-2xl z-50 py-2">
+              <div className="absolute top-full left-[120px] mt-2 w-64 bg-surface-hover border border-border rounded-lg shadow-2xl z-50 py-2">
                 <div 
-                  className="px-4 py-2 hover:bg-white/5 cursor-pointer flex items-center gap-3 transition-colors"
+                  className="px-4 py-2 hover:bg-surface-hover cursor-pointer flex items-center gap-3 transition-colors"
                   onClick={() => {
                     setSelectedMemberIds([]);
                     setDropdownOpen(false);
                   }}
                 >
-                  <input 
-                    type="checkbox" 
-                    checked={selectedMemberIds.length === 0} 
-                    readOnly
-                    className="w-4 h-4 rounded border-white/20 bg-navy-900 accent-gold-400"
-                  />
+                  {selectedMemberIds.length === 0 ? (
+                    <CheckCircle2 className="w-5 h-5 text-accent-500" />
+                  ) : (
+                    <Circle className="w-5 h-5 text-text-muted" />
+                  )}
                   <span className="text-sm font-medium">All Members</span>
                 </div>
-                <div className="h-px bg-white/10 my-1"></div>
+                <div className="h-px bg-border my-1"></div>
                 <div className="max-h-60 overflow-y-auto">
                   {family.members.map((m: any) => (
                     <div 
                       key={m.id}
-                      className="px-4 py-2 hover:bg-white/5 cursor-pointer flex items-center gap-3 transition-colors"
+                      className="px-4 py-2 hover:bg-surface-hover cursor-pointer flex items-center gap-3 transition-colors"
                       onClick={() => {
                         if (selectedMemberIds.includes(m.id)) {
                           setSelectedMemberIds(selectedMemberIds.filter(id => id !== m.id));
@@ -263,12 +262,11 @@ export default function Family() {
                         }
                       }}
                     >
-                      <input 
-                        type="checkbox" 
-                        checked={selectedMemberIds.includes(m.id)} 
-                        readOnly
-                        className="w-4 h-4 rounded border-white/20 bg-navy-900 accent-gold-400"
-                      />
+                      {selectedMemberIds.includes(m.id) ? (
+                        <CheckCircle2 className="w-5 h-5 text-accent-500" />
+                      ) : (
+                        <Circle className="w-5 h-5 text-text-muted" />
+                      )}
                       <span className="text-sm">{m.name}</span>
                     </div>
                   ))}
@@ -287,7 +285,7 @@ export default function Family() {
         </div>
         <div className="glass-card p-6">
           <p className="text-text-secondary text-sm mb-1">Family Total Invested</p>
-          <h2 className="text-display text-3xl text-white">{formatCurrency(totalInvested)}</h2>
+          <h2 className="text-display text-3xl">{formatCurrency(totalInvested)}</h2>
         </div>
       </div>
 
@@ -303,8 +301,8 @@ export default function Family() {
                 onClick={() => setSelectedSector(selectedSector === sector.name ? null : sector.name)}
                 className={`p-4 rounded-xl border cursor-pointer transition-all ${
                   selectedSector === sector.name 
-                    ? 'border-gold-400 bg-gold-400/5' 
-                    : 'border-white/5 bg-navy-900/50 hover:border-white/20'
+                    ? 'border-accent-500 bg-accent-500/10' 
+                    : 'border-border bg-surface-hover hover:border-accent-500/50'
                 }`}
               >
                 <p className="text-sm text-text-secondary mb-1">{sector.name}</p>
@@ -315,26 +313,26 @@ export default function Family() {
 
           {/* Drill Down Sector List */}
           {selectedSector && (
-            <div className="mt-6 border-t border-white/5 pt-6 animate-in slide-in-from-top-4 fade-in duration-300">
-              <h4 className="text-md font-medium text-gold-300 mb-4">{selectedSector} Assets</h4>
+            <div className="mt-6 border-t border-border pt-6 animate-in slide-in-from-top-4 fade-in duration-300">
+              <h4 className="text-md font-medium text-accent-600 mb-4">{selectedSector} Assets</h4>
               <div className="space-y-3">
                 {sectorAssets?.map((asset: any) => (
-                  <div key={asset.id} className="bg-navy-900 border border-white/5 rounded-lg p-5 flex flex-col gap-4">
+                  <div key={asset.id} className="bg-surface-hover border border-border rounded-lg p-5 flex flex-col gap-4">
                     <div className="flex justify-between items-start">
                       <div>
                         <p className="font-medium text-lg">{asset.name}</p>
                         <div className="flex items-center gap-2 mt-1">
-                          <span className="text-xs bg-navy-800 text-text-muted px-2 py-0.5 rounded">Owner: {asset.familyMemberName}</span>
-                          <span className="text-xs bg-gold-400/10 text-gold-400 px-2 py-0.5 rounded">{asset.assetType.replace('_', ' ')}</span>
+                          <span className="text-xs bg-surface-hover text-text-muted px-2 py-0.5 rounded">Owner: {asset.familyMemberName}</span>
+                          <span className="text-xs bg-accent-500/10 text-accent-500 px-2 py-0.5 rounded">{asset.assetType.replace('_', ' ')}</span>
                         </div>
                       </div>
                       <div className="text-right">
-                        <p className="font-medium text-gold-400 text-lg">{formatCurrency(asset.currentValue)}</p>
+                        <p className="font-medium text-accent-500 text-lg">{formatCurrency(asset.currentValue)}</p>
                         <p className="text-xs text-text-secondary">Inv: {formatCurrency(asset.investedAmount)}</p>
                       </div>
                     </div>
                     
-                    <div className="grid grid-cols-2 md:grid-cols-3 gap-y-3 gap-x-4 pt-3 border-t border-white/10 text-sm">
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-y-3 gap-x-4 pt-3 border-t border-border text-sm">
                       {asset.assetType === 'GOLD' && (
                         <>
                           <div><span className="text-text-muted text-xs block">Weight</span><span>{asset.weightInGrams}g</span></div>
@@ -393,13 +391,13 @@ export default function Family() {
 
           <div className="space-y-3 flex-1 mb-6">
             {family.members.map(member => (
-              <div key={member.id} className="flex items-center justify-between p-3 bg-navy-900 rounded-lg">
+              <div key={member.id} className="flex items-center justify-between p-3 bg-surface-hover border border-border rounded-lg">
                 <div>
                   <p className="text-sm font-medium">{member.name}</p>
                   <p className="text-xs text-text-muted">{member.email}</p>
                 </div>
                 {member.id === family.creatorId && (
-                  <span className="text-[10px] uppercase tracking-wider bg-gold-400/20 text-gold-400 px-2 py-1 rounded">Admin</span>
+                  <span className="text-[10px] uppercase tracking-wider bg-accent-500/10 text-accent-500 px-2 py-1 rounded">Admin</span>
                 )}
               </div>
             ))}
@@ -407,7 +405,7 @@ export default function Family() {
 
           <div className="mt-auto">
             {isCreator && (
-              <div className="pt-4 border-t border-white/10 mb-4">
+              <div className="pt-4 border-t border-border mb-4">
                 <h4 className="text-sm font-medium mb-1">Invite Member via Email</h4>
                 <p className="text-xs text-text-secondary mb-3">An email invitation will be sent to them with a link to join.</p>
                 <div className="space-y-2">
@@ -442,7 +440,7 @@ export default function Family() {
               </div>
             )}
 
-            <div className="pt-4 border-t border-white/10">
+            <div className="pt-4 border-t border-border">
               <button
                 onClick={() => {
                   if (window.confirm('Are you sure you want to leave this family group? You will lose access to the pooled dashboard.')) {

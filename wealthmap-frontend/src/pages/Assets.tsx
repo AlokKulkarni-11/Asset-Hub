@@ -80,11 +80,11 @@ export default function Assets() {
   }, {}) || {};
 
   const getCategoryIcon = (type: string) => {
-    if (type === 'FIXED_DEPOSIT') return <Landmark className="w-8 h-8 text-gold-400" />;
-    if (type === 'STOCK') return <TrendingUp className="w-8 h-8 text-gold-400" />;
-    if (type === 'MUTUAL_FUND') return <Briefcase className="w-8 h-8 text-gold-400" />;
-    if (type === 'REAL_ESTATE') return <Building2 className="w-8 h-8 text-gold-400" />;
-    return <Coins className="w-8 h-8 text-gold-400" />;
+    if (type === 'FIXED_DEPOSIT') return <Landmark className="w-8 h-8 text-accent-500" />;
+    if (type === 'STOCK') return <TrendingUp className="w-8 h-8 text-accent-500" />;
+    if (type === 'MUTUAL_FUND') return <Briefcase className="w-8 h-8 text-accent-500" />;
+    if (type === 'REAL_ESTATE') return <Building2 className="w-8 h-8 text-accent-500" />;
+    return <Coins className="w-8 h-8 text-accent-500" />;
   };
 
   const formatCurrency = (value: number) => {
@@ -144,7 +144,7 @@ export default function Assets() {
           <div className="text-text-muted">Loading assets...</div>
         ) : Object.keys(groupedAssets).length === 0 ? (
           <div className="glass-card p-12 flex flex-col items-center justify-center text-center">
-            <Coins className="w-12 h-12 text-gold-400 mb-4 opacity-50" />
+            <Coins className="w-12 h-12 text-accent-500 mb-4 opacity-50" />
             <h3 className="text-lg font-medium mb-2">No Assets Found</h3>
             <p className="text-text-secondary">Start tracking your wealth by adding your first asset.</p>
           </div>
@@ -162,11 +162,11 @@ export default function Assets() {
               <div key={category} className="glass-card overflow-hidden">
                 {/* Level 1: Category Header Bar */}
                 <div 
-                  className={`p-6 flex flex-col sm:flex-row items-center justify-between cursor-pointer transition-colors ${isCategoryExpanded ? 'bg-white/5' : 'hover:bg-white/5'}`}
+                  className={`p-6 flex flex-col sm:flex-row items-center justify-between cursor-pointer transition-colors ${isCategoryExpanded ? 'bg-surface-hover' : 'hover:bg-surface-hover'}`}
                   onClick={() => handleCategoryClick(category)}
                 >
                   <div className="flex items-center gap-4 w-full sm:w-auto mb-4 sm:mb-0">
-                    <div className="w-14 h-14 rounded-full bg-gold-400/10 flex items-center justify-center shrink-0">
+                    <div className="w-14 h-14 rounded-full bg-accent-500/10 flex items-center justify-center shrink-0">
                       {getCategoryIcon(category)}
                     </div>
                     <div>
@@ -178,7 +178,7 @@ export default function Assets() {
                   <div className="flex items-center gap-8 w-full sm:w-auto justify-between sm:justify-end">
                     <div className="text-right">
                       <p className="text-text-secondary text-sm">Total Current Value</p>
-                      <p className="text-xl font-medium text-gold-400">{formatCurrency(data.totalCurrentValue)}</p>
+                      <p className="text-xl font-medium text-accent-500">{formatCurrency(data.totalCurrentValue)}</p>
                     </div>
                     <div className="text-right hidden md:block">
                       <p className="text-text-secondary text-sm">Total Invested</p>
@@ -196,7 +196,7 @@ export default function Assets() {
 
                 {/* Level 2: SubGroups */}
                 {isCategoryExpanded && (
-                  <div className="border-t border-white/5 bg-navy-900/30">
+                  <div className="border-t border-border bg-surface-hover">
                     {Object.entries(data.subGroups).map(([subName, subData]: [string, any]) => {
                       const subGainLoss = subData.totalCurrentValue - subData.totalInvested;
                       const subGainPercent = subData.totalInvested > 0 ? (subGainLoss / subData.totalInvested) * 100 : 0;
@@ -206,7 +206,7 @@ export default function Assets() {
                         <div key={subName} className="border-b border-white/5 last:border-0">
                           {/* SubGroup Header */}
                           <div 
-                            className={`px-8 py-4 flex items-center justify-between cursor-pointer transition-colors ${isSubExpanded ? 'bg-gold-400/5 border-l-2 border-gold-400' : 'hover:bg-white/5 border-l-2 border-transparent'}`}
+                            className={`px-8 py-4 flex items-center justify-between cursor-pointer transition-colors ${isSubExpanded ? 'bg-accent-500/10 border-l-2 border-accent-500' : 'hover:bg-surface border-l-2 border-transparent'}`}
                             onClick={() => setExpandedSubGroup(isSubExpanded ? null : `${category}-${subName}`)}
                           >
                             <div>
@@ -216,7 +216,7 @@ export default function Assets() {
                             
                             <div className="flex items-center gap-6">
                               <div className="text-right">
-                                <p className="text-gold-400 font-medium">{formatCurrency(subData.totalCurrentValue)}</p>
+                                <p className="text-accent-500 font-medium">{formatCurrency(subData.totalCurrentValue)}</p>
                                 <p className="text-text-secondary text-xs">Inv: {formatCurrency(subData.totalInvested)}</p>
                               </div>
                               {isSubExpanded ? <ChevronUp className="w-5 h-5 text-text-secondary" /> : <ChevronDown className="w-5 h-5 text-text-secondary" />}
@@ -225,10 +225,10 @@ export default function Assets() {
                           
                           {/* Level 3: Individual Assets (Drop-down / Scroll-down) */}
                           {isSubExpanded && (
-                            <div className="px-8 py-6 bg-navy-900/50">
+                            <div className="px-8 py-6 bg-surface-hover">
                               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 animate-in slide-in-from-top-4 fade-in duration-300">
                                 {subData.assets.map((asset: AssetResponse) => (
-                                  <div key={asset.id} className="bg-navy-800 p-5 rounded-xl border border-white/5 hover:border-gold-400/30 transition-colors shadow-lg">
+                                  <div key={asset.id} className="bg-surface p-5 rounded-xl border border-border hover:border-accent-500/50 transition-colors shadow-sm">
                                     <div className="flex justify-between items-start mb-4">
                                       <div>
                                         <h3 className="font-medium text-lg leading-tight">{asset.name}</h3>
@@ -241,19 +241,19 @@ export default function Assets() {
                                             e.stopPropagation();
                                             setMenuOpenId(menuOpenId === asset.id ? null : asset.id);
                                           }}
-                                          className="p-1 hover:bg-white/5 rounded text-text-secondary hover:text-white transition-colors"
+                                          className="p-1 hover:bg-surface-hover rounded text-text-secondary hover:text-text-primary transition-colors"
                                         >
                                           <MoreVertical className="w-5 h-5" />
                                         </button>
                                         
                                         {menuOpenId === asset.id && (
-                                          <div className="absolute right-0 mt-1 w-36 bg-navy-900 border border-white/20 rounded-lg shadow-xl overflow-hidden z-10">
+                                          <div className="absolute right-0 mt-1 w-36 bg-surface border border-border rounded-lg shadow-xl overflow-hidden z-10">
                                             <button 
                                               onClick={() => {
                                                 setMenuOpenId(null);
                                                 setEditingAsset(asset);
                                               }}
-                                              className="w-full flex items-center gap-2 px-4 py-2 text-sm text-left hover:bg-white/5"
+                                              className="w-full flex items-center gap-2 px-4 py-2 text-sm text-left hover:bg-surface-hover"
                                             >
                                               <Edit2 className="w-4 h-4" />
                                               Edit
@@ -282,7 +282,7 @@ export default function Assets() {
                                         <span className="text-text-secondary">Current Value:</span>
                                         <span className="font-medium text-gold-300">{formatCurrency(asset.currentValue)}</span>
                                       </div>
-                                      <div className="flex justify-between text-sm pt-2 border-t border-white/10">
+                                      <div className="flex justify-between text-sm pt-2 border-t border-border">
                                         <span className="text-text-secondary">Gain/Loss:</span>
                                         <span className={`font-medium ${asset.gainLoss >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
                                           {asset.gainLoss >= 0 ? '+' : ''}{formatCurrency(asset.gainLoss)} ({asset.gainPercent?.toFixed(2)}%)

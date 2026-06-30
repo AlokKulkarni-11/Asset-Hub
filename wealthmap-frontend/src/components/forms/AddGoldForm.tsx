@@ -88,7 +88,7 @@ export default function AddGoldForm({ onClose, initialData }: Props) {
   };
 
   return (
-    <div className="fixed inset-0 bg-navy-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+    <div className="fixed inset-0 bg-background backdrop-blur-sm z-50 flex items-center justify-center p-4">
       <div className="glass-card w-full max-w-md p-6 relative">
         <button onClick={onClose} className="absolute top-4 right-4 text-text-secondary hover:text-white">
           <X className="w-5 h-5" />
@@ -120,7 +120,7 @@ export default function AddGoldForm({ onClose, initialData }: Props) {
                 </div>
                 <div>
                   <label className="block text-sm text-text-secondary mb-1">Purity</label>
-                  <select {...register('purity')} className="glass-input bg-navy-900">
+                  <select {...register('purity')} className="glass-input bg-surface">
                     <option value="K24">24 Karat (99.9%)</option>
                     <option value="K22">22 Karat (91.6%)</option>
                     <option value="K20">20 Karat (83.3%)</option>

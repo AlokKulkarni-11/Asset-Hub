@@ -123,7 +123,7 @@ export default function AddMutualFundForm({ onClose, initialData }: Props) {
   };
 
   return (
-    <div className="fixed inset-0 bg-navy-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+    <div className="fixed inset-0 bg-background backdrop-blur-sm z-50 flex items-center justify-center p-4">
       <div className="glass-card w-full max-w-md p-6 relative">
         <button onClick={onClose} className="absolute top-4 right-4 text-text-secondary hover:text-white">
           <X className="w-5 h-5" />
@@ -151,18 +151,18 @@ export default function AddMutualFundForm({ onClose, initialData }: Props) {
                 onFocus={() => searchQuery.length >= 3 && setShowDropdown(true)}
               />
               {isSearching && (
-                <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gold-400 animate-spin" />
+                <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-accent-500 animate-spin" />
               )}
             </div>
 
             {/* Typeahead Dropdown */}
             {showDropdown && searchResults.length > 0 && (
-              <div className="absolute top-full left-0 right-0 mt-1 bg-navy-900 border border-white/10 rounded-lg shadow-xl max-h-60 overflow-y-auto overflow-x-hidden">
+              <div className="absolute top-full left-0 right-0 mt-1 bg-surface border border-border rounded-lg shadow-xl max-h-60 overflow-y-auto overflow-x-hidden">
                 {searchResults.map((fund, idx) => (
                   <div 
                     key={idx} 
                     onClick={() => selectFund(fund)}
-                    className="p-3 hover:bg-white/5 cursor-pointer border-b border-white/5 last:border-0 flex justify-between items-center"
+                    className="p-3 hover:bg-surface-hover cursor-pointer border-b border-white/5 last:border-0 flex justify-between items-center"
                   >
                     <div>
                       <div className="font-medium text-white text-sm">{fund.schemeName}</div>

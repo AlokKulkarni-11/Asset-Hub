@@ -13,7 +13,7 @@ export default function AppLayout() {
   }
 
   return (
-    <div className="flex h-screen bg-navy-950 overflow-hidden relative">
+    <div className="flex h-screen bg-background overflow-hidden relative">
       <div className="bg-orb-gold" />
       <div className="bg-orb-blue" />
       
@@ -22,7 +22,7 @@ export default function AppLayout() {
 
       {/* Sidebar actual (Hover to expand on desktop) */}
       <Sidebar 
-        className="hidden md:flex flex-col absolute left-0 top-0 bottom-0 w-20 hover:w-64 transition-all duration-300 border-r border-white/10 bg-navy-900/95 backdrop-blur-xl z-50 overflow-hidden group shadow-2xl shadow-navy-950"
+        className="hidden md:flex flex-col absolute left-0 top-0 bottom-0 w-20 hover:w-64 transition-all duration-300 border-r border-border bg-surface backdrop-blur-xl z-50 overflow-hidden group shadow-2xl shadow-slate-200"
       />
 
       {/* Main Content */}

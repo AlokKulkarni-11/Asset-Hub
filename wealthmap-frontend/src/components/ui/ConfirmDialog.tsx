@@ -25,14 +25,14 @@ export default function ConfirmDialog({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-navy-950/80 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
+    <div className="fixed inset-0 bg-background backdrop-blur-sm z-[100] flex items-center justify-center p-4">
       <div className="glass-card w-full max-w-sm p-6 relative animate-in zoom-in-95 duration-200">
         <button onClick={onCancel} className="absolute top-4 right-4 text-text-secondary hover:text-white transition-colors">
           <X className="w-5 h-5" />
         </button>
 
         <div className="flex items-start gap-4 mb-6">
-          <div className={`p-3 rounded-full shrink-0 ${isDestructive ? 'bg-red-500/10 text-red-500' : 'bg-gold-400/10 text-gold-400'}`}>
+          <div className={`p-3 rounded-full shrink-0 ${isDestructive ? 'bg-red-500/10 text-red-500' : 'bg-accent-500/10 text-accent-500'}`}>
             <AlertTriangle className="w-6 h-6" />
           </div>
           <div>

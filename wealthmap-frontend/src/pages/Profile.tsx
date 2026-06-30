@@ -52,8 +52,8 @@ export default function Profile() {
       </div>
 
       <div className="glass-card p-8">
-        <div className="flex items-center gap-6 mb-8 pb-8 border-b border-white/10">
-          <div className="w-24 h-24 rounded-full bg-gradient-to-br from-gold-400 to-gold-600 flex items-center justify-center text-navy-950 text-3xl font-bold shadow-lg shadow-gold-500/20 shrink-0">
+        <div className="flex items-center gap-6 mb-8 pb-8 border-b border-border">
+          <div className="w-24 h-24 rounded-full bg-gradient-to-br from-accent-400 to-accent-600 flex items-center justify-center text-background text-3xl font-bold shadow-lg shadow-accent-500/20 shrink-0">
             {user?.name?.charAt(0).toUpperCase() || 'U'}
           </div>
           <div>
@@ -86,15 +86,15 @@ export default function Profile() {
               <label className="block text-sm text-text-secondary mb-1">Email Address</label>
               <div className="relative">
                 <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-text-muted" />
-                <input {...register('email')} className="glass-input pl-10 bg-navy-900/30" disabled />
+                <input {...register('email')} className="glass-input pl-10 bg-surface" disabled />
               </div>
               {errors.email && <p className="text-red-400 text-xs mt-1">{errors.email.message}</p>}
             </div>
           </div>
 
-          <div className="pt-6 border-t border-white/10">
+          <div className="pt-6 border-t border-border">
             <h3 className="text-lg font-medium mb-4 flex items-center gap-2">
-              <Shield className="w-5 h-5 text-gold-400" />
+              <Shield className="w-5 h-5 text-accent-500" />
               Security
             </h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

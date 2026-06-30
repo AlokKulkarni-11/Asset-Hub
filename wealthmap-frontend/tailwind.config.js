@@ -4,9 +4,22 @@ export default {
     "./index.html",
     "./src/**/*.{js,ts,jsx,tsx}",
   ],
+  darkMode: 'class',
   theme: {
     extend: {
       colors: {
+        background: 'var(--bg-background)',
+        surface: 'var(--bg-surface)',
+        'surface-hover': 'var(--bg-surface-hover)',
+        border: 'var(--border-color)',
+        primary: 'var(--text-primary)',
+        secondary: 'var(--text-secondary)',
+        muted: 'var(--text-muted)',
+        accent: {
+          400: 'var(--accent-400)',
+          500: 'var(--accent-500)',
+          600: 'var(--accent-600)',
+        },
         navy: {
           950: '#0A0F1E',
           900: '#0D1526',

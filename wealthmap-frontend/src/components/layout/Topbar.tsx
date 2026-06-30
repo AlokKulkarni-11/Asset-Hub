@@ -13,7 +13,7 @@ export default function Topbar() {
   }, []);
 
   return (
-    <header className="h-16 border-b border-white/10 bg-navy-950/50 backdrop-blur-md flex items-center justify-between px-4 md:px-8 shrink-0 relative z-10">
+    <header className="h-16 border-b border-border bg-background/50 backdrop-blur-md flex items-center justify-between px-4 md:px-8 shrink-0 relative z-10">
       <div className="flex items-center gap-4">
         <h2 className="text-xl font-medium hidden sm:block">
           {greeting}, {user?.name?.split(' ')[0] || 'User'} 👋
@@ -23,7 +23,7 @@ export default function Topbar() {
       <div className="flex items-center gap-4">
         <Link 
           to="/profile"
-          className="w-9 h-9 rounded-full bg-gradient-to-br from-gold-400 to-gold-500 flex items-center justify-center text-navy-950 font-medium shadow-lg shadow-gold-500/20 hover:scale-105 transition-transform"
+          className="w-9 h-9 rounded-full bg-gradient-to-br from-accent-400 to-accent-500 flex items-center justify-center text-background font-medium shadow-accent-500/20 hover:scale-105 transition-transform"
         >
           {user?.name?.charAt(0).toUpperCase() || 'U'}
         </Link>

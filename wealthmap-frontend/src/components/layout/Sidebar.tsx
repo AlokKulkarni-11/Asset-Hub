@@ -22,8 +22,8 @@ export default function Sidebar({ className = '', onLinkClick }: SidebarProps) {
   return (
     <aside className={className}>
       <div className="p-6 flex items-center shrink-0">
-        <h1 className="text-2xl font-bold font-dmsans text-transparent bg-clip-text bg-gradient-to-r from-gold-400 to-gold-300 flex items-center gap-4 whitespace-nowrap">
-          <Wallet className="w-8 h-8 text-gold-400 shrink-0" />
+        <h1 className="text-2xl font-bold font-dmsans text-transparent bg-clip-text bg-gradient-to-r from-accent-400 to-accent-400 flex items-center gap-4 whitespace-nowrap">
+          <Wallet className="w-8 h-8 text-accent-500 shrink-0" />
           <span className="opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity duration-300">
             Asset Hub
           </span>
@@ -39,8 +39,8 @@ export default function Sidebar({ className = '', onLinkClick }: SidebarProps) {
             className={({ isActive }) =>
               `flex items-center gap-4 px-4 py-3 rounded-xl transition-all duration-200 whitespace-nowrap ${
                 isActive
-                  ? 'bg-gold-400/10 text-gold-400 font-medium border border-gold-400/20'
-                  : 'text-text-secondary hover:bg-white/5 hover:text-text-primary'
+                  ? 'bg-accent-500/10 text-accent-500 font-medium border border-accent-500/20'
+                  : 'text-text-secondary hover:bg-surface-hover hover:text-text-primary'
               }`
             }
           >
@@ -52,7 +52,7 @@ export default function Sidebar({ className = '', onLinkClick }: SidebarProps) {
         ))}
       </nav>
 
-      <div className="p-4 border-t border-white/10 mt-auto shrink-0">
+      <div className="p-4 border-t border-border mt-auto shrink-0">
         <button
           onClick={() => {
             if (onLinkClick) onLinkClick();

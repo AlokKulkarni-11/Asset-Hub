@@ -35,7 +35,7 @@ export default function Dashboard() {
   if (assetsLoading || snapshotsLoading) {
     return (
       <div className="flex items-center justify-center h-[50vh]">
-        <Loader2 className="w-8 h-8 animate-spin text-gold-400" />
+        <Loader2 className="w-8 h-8 animate-spin text-accent-500" />
       </div>
     );
   }
@@ -57,6 +57,31 @@ export default function Dashboard() {
   };
 
   const isPositive = totalGain >= 0;
+
+  // Time Range Filter Logic
+  const [timeRange, setTimeRange] = useState('ALL');
+  const filteredSnapshots = React.useMemo(() => {
+    if (!snapshots) return [];
+    if (timeRange === 'ALL') return snapshots;
+
+    const cutoffDate = new Date();
+    switch (timeRange) {
+      case '1M':
+        cutoffDate.setMonth(cutoffDate.getMonth() - 1);
+        break;
+      case '3M':
+        cutoffDate.setMonth(cutoffDate.getMonth() - 3);
+        break;
+      case '6M':
+        cutoffDate.setMonth(cutoffDate.getMonth() - 6);
+        break;
+      case '1Y':
+        cutoffDate.setFullYear(cutoffDate.getFullYear() - 1);
+        break;
+    }
+
+    return snapshots.filter((s: any) => new Date(s.date) >= cutoffDate);
+  }, [snapshots, timeRange]);
 
   // Prepare Pie Chart Data
   const allocationData = filteredAssets?.reduce((acc: any, asset) => {
@@ -85,17 +110,17 @@ export default function Dashboard() {
         </div>
         <div className="glass-card p-6">
           <p className="text-text-secondary text-sm mb-1">Total Invested</p>
-          <h2 className="text-display text-2xl text-white">{formatCurrency(totalInvested)}</h2>
+          <h2 className="text-display text-2xl text-primary">{formatCurrency(totalInvested)}</h2>
         </div>
         <div className="glass-card p-6">
           <p className="text-text-secondary text-sm mb-1">Total Gain</p>
-          <h2 className={`text-display text-2xl ${isPositive ? 'text-emerald-400' : 'text-red-400'}`}>
+          <h2 className={`text-display text-2xl ${isPositive ? 'text-emerald-500' : 'text-red-500'}`}>
             {isPositive ? '+' : ''}{formatCurrency(totalGain)}
           </h2>
         </div>
         <div className="glass-card p-6">
           <p className="text-text-secondary text-sm mb-1">Overall Return</p>
-          <h2 className={`text-display text-2xl ${isPositive ? 'text-emerald-400' : 'text-red-400'}`}>
+          <h2 className={`text-display text-2xl ${isPositive ? 'text-emerald-500' : 'text-red-500'}`}>
             {isPositive ? '+' : ''}{overallReturn.toFixed(2)}%
           </h2>
         </div>
@@ -105,31 +130,45 @@ export default function Dashboard() {
         
         {/* Line Chart */}
         <div className="lg:col-span-2 glass-card p-6 min-h-[400px]">
-          <h3 className="text-lg font-medium mb-6">Historical Net Worth</h3>
-          {snapshots?.length === 0 ? (
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-6 gap-4">
+            <h3 className="text-lg font-medium">Historical Net Worth</h3>
+            <div className="flex gap-1 p-1 bg-surface-hover rounded-lg border border-border">
+              {['1M', '3M', '6M', '1Y', 'ALL'].map(range => (
+                <button 
+                  key={range}
+                  onClick={() => setTimeRange(range)}
+                  className={`px-3 py-1 text-xs font-medium rounded-md transition-all ${timeRange === range ? 'bg-surface shadow-sm border border-border text-primary' : 'text-text-secondary hover:text-text-primary hover:bg-surface/50 border border-transparent'}`}
+                >
+                  {range}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {filteredSnapshots?.length === 0 ? (
             <div className="h-[300px] flex items-center justify-center text-text-muted">
-              No historical data available yet.
+              No historical data available for this range.
             </div>
           ) : (
             <div className="h-[300px]">
               <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={snapshots}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" vertical={false} />
+                <LineChart data={filteredSnapshots}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#CBD5E1" vertical={false} />
                   <XAxis 
                     dataKey="date" 
-                    stroke="rgba(255,255,255,0.5)" 
-                    tick={{fill: 'rgba(255,255,255,0.5)', fontSize: 12}}
+                    stroke="#64748B" 
+                    tick={{fill: '#64748B', fontSize: 12}}
                     tickMargin={10}
                   />
                   <YAxis 
-                    stroke="rgba(255,255,255,0.5)" 
-                    tick={{fill: 'rgba(255,255,255,0.5)', fontSize: 12}}
+                    stroke="#64748B" 
+                    tick={{fill: '#64748B', fontSize: 12}}
                     tickFormatter={(value) => `₹${(value / 100000).toFixed(1)}L`}
                     width={80}
                   />
                   <RechartsTooltip 
-                    contentStyle={{ backgroundColor: '#0A0F1E', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px' }}
-                    itemStyle={{ color: '#fff' }}
+                    contentStyle={{ backgroundColor: '#FFFFFF', border: '1px solid #BAE6FD', borderRadius: '8px' }}
+                    itemStyle={{ color: '#0F172A' }}
                     formatter={(value: any) => formatCurrency(Number(value) || 0)}
                   />
                   <Line 
@@ -170,9 +209,9 @@ export default function Dashboard() {
                   <Pie
                     data={allocationData}
                     cx="50%"
-                    cy="50%"
-                    innerRadius={70}
-                    outerRadius={100}
+                    cy="45%"
+                    innerRadius={55}
+                    outerRadius={80}
                     paddingAngle={5}
                     dataKey="value"
                     stroke="none"
@@ -182,12 +221,12 @@ export default function Dashboard() {
                     ))}
                   </Pie>
                   <RechartsTooltip 
-                    contentStyle={{ backgroundColor: '#0A0F1E', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px' }}
-                    itemStyle={{ color: '#fff' }}
+                    contentStyle={{ backgroundColor: '#FFFFFF', border: '1px solid #BAE6FD', borderRadius: '8px' }}
+                    itemStyle={{ color: '#0F172A' }}
                     formatter={(value: any) => formatCurrency(Number(value) || 0)}
                   />
                   <Legend 
-                    layout="vertical" 
+                    layout="horizontal" 
                     verticalAlign="bottom" 
                     align="center"
                     wrapperStyle={{ paddingTop: '20px' }}

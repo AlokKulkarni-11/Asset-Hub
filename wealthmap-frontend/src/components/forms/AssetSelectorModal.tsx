@@ -60,7 +60,7 @@ export default function AssetSelectorModal({ onClose }: Props) {
   }
   if (selectedType) {
     return (
-      <div className="fixed inset-0 bg-navy-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+      <div className="fixed inset-0 bg-background backdrop-blur-sm z-50 flex items-center justify-center p-4">
         <div className="glass-card w-full max-w-md p-6 relative text-center">
           <button onClick={onClose} className="absolute top-4 right-4 text-text-secondary hover:text-white">
             <X className="w-5 h-5" />
@@ -74,7 +74,7 @@ export default function AssetSelectorModal({ onClose }: Props) {
   }
 
   return (
-    <div className="fixed inset-0 bg-navy-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+    <div className="fixed inset-0 bg-background backdrop-blur-sm z-50 flex items-center justify-center p-4">
       <div className="glass-card w-full max-w-2xl p-6 md:p-8 relative max-h-[90vh] overflow-y-auto">
         <button onClick={onClose} className="absolute top-4 right-4 text-text-secondary hover:text-white">
           <X className="w-5 h-5" />
@@ -86,21 +86,21 @@ export default function AssetSelectorModal({ onClose }: Props) {
         <div className="space-y-8">
           {categories.map((category) => (
             <div key={category.title}>
-              <h3 className="text-sm font-medium text-gold-400 mb-4 tracking-wider uppercase">{category.title}</h3>
+              <h3 className="text-sm font-medium text-accent-500 mb-4 tracking-wider uppercase">{category.title}</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {category.items.map((item) => (
                   <button
                     key={item.id}
                     onClick={() => setSelectedType(item.id as AssetType)}
-                    className="flex items-center gap-4 p-4 rounded-xl border border-white/10 bg-navy-900/50 hover:bg-white/5 hover:border-gold-400/30 transition-all text-left group"
+                    className="flex items-center gap-4 p-4 rounded-xl border border-border bg-surface hover:bg-surface-hover hover:border-accent-500/20 transition-all text-left group"
                   >
-                    <div className="w-12 h-12 rounded-lg bg-white/5 flex items-center justify-center group-hover:bg-gold-400/10 group-hover:text-gold-400 transition-colors">
+                    <div className="w-12 h-12 rounded-lg bg-white/5 flex items-center justify-center group-hover:bg-accent-500/10 group-hover:text-accent-500 transition-colors">
                       <item.icon className="w-6 h-6" />
                     </div>
                     <div className="flex-1">
                       <h4 className="font-medium text-lg">{item.name}</h4>
                       {item.comingSoon && (
-                        <span className="text-[10px] px-2 py-0.5 rounded-full bg-navy-950 border border-white/10 text-text-muted mt-1 inline-block">
+                        <span className="text-[10px] px-2 py-0.5 rounded-full bg-background border border-border text-text-muted mt-1 inline-block">
                           Coming Soon
                         </span>
                       )}

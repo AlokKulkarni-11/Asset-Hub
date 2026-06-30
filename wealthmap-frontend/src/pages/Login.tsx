@@ -48,8 +48,8 @@ export default function Login() {
       
       <div className="glass-card w-full max-w-md p-8 relative z-10">
         <div className="flex flex-col items-center mb-8">
-          <div className="w-12 h-12 rounded-full bg-gradient-to-br from-gold-400 to-gold-500 flex items-center justify-center mb-4 shadow-lg shadow-gold-500/20">
-            <Shield className="w-6 h-6 text-navy-950" />
+          <div className="w-12 h-12 rounded-full bg-gradient-to-br from-accent-400 to-accent-500 flex items-center justify-center mb-4 shadow-lg shadow-accent-500/20">
+            <Shield className="w-6 h-6 text-background" />
           </div>
           <h1 className="text-display text-3xl mb-2">Welcome Back</h1>
           <p className="text-text-secondary text-body">Access your wealth dashboard</p>
@@ -99,7 +99,7 @@ export default function Login() {
 
         <div className="mt-6 text-center text-sm text-text-secondary">
           Don't have an account?{' '}
-          <Link to="/register" className="text-gold-400 hover:text-gold-300 transition-colors">
+          <Link to="/register" className="text-accent-500 hover:text-gold-300 transition-colors">
             Open Account
           </Link>
         </div>
