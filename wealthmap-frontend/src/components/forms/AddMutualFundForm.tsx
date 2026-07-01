@@ -157,16 +157,21 @@ export default function AddMutualFundForm({ onClose, initialData }: Props) {
 
             {/* Typeahead Dropdown */}
             {showDropdown && searchResults.length > 0 && (
-              <div className="absolute top-full left-0 right-0 mt-1 bg-surface border border-border rounded-lg shadow-xl max-h-60 overflow-y-auto overflow-x-hidden">
+              <div className="absolute top-full left-0 right-0 mt-1 bg-white border-2 border-accent-500 rounded-lg shadow-xl max-h-60 overflow-y-auto overflow-x-hidden z-50">
                 {searchResults.map((fund, idx) => (
                   <div 
                     key={idx} 
                     onClick={() => selectFund(fund)}
-                    className="p-3 hover:bg-surface-hover cursor-pointer border-b border-white/5 last:border-0 flex justify-between items-center"
+                    className="p-3 hover:bg-sky-50 cursor-pointer border-b border-sky-100 last:border-0 transition-colors"
+                    title={fund.schemeName}
                   >
-                    <div>
-                      <div className="font-medium text-white text-sm">{fund.schemeName}</div>
-                      <div className="text-xs text-text-secondary mt-1">Code: {fund.schemeCode}</div>
+                    <div className="flex flex-col gap-1.5">
+                      <div className="font-medium text-slate-900 text-sm leading-relaxed break-words pr-2">
+                        {fund.schemeName}
+                      </div>
+                      <div className="text-[11px] text-slate-600 bg-sky-100 rounded px-2 py-0.5 inline-block self-start font-medium">
+                        Code: {fund.schemeCode}
+                      </div>
                     </div>
                   </div>
                 ))}

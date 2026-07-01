@@ -160,19 +160,24 @@ export default function AddStockForm({ onClose, initialData }: Props) {
 
             {/* Typeahead Dropdown */}
             {showDropdown && searchResults.length > 0 && (
-              <div className="absolute top-full left-0 right-0 mt-1 bg-surface border border-border rounded-lg shadow-xl max-h-60 overflow-y-auto overflow-x-hidden">
+              <div className="absolute top-full left-0 right-0 mt-1 bg-white border-2 border-accent-500 rounded-lg shadow-xl max-h-60 overflow-y-auto overflow-x-hidden z-50">
                 {searchResults.map((stock, idx) => (
                   <div 
                     key={idx} 
                     onClick={() => selectStock(stock)}
-                    className="p-3 hover:bg-surface-hover cursor-pointer border-b border-white/5 last:border-0 flex justify-between items-center"
+                    className="p-3 hover:bg-sky-50 cursor-pointer border-b border-sky-100 last:border-0 transition-colors"
+                    title={`${stock.symbol} - ${stock.companyName}`}
                   >
-                    <div>
-                      <div className="font-medium text-white">{stock.symbol}</div>
-                      <div className="text-xs text-text-secondary line-clamp-1">{stock.companyName}</div>
-                    </div>
-                    <div className="text-[10px] px-2 py-1 bg-background rounded-md text-accent-500 ml-2 whitespace-nowrap">
-                      {stock.exchange}
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="flex-1 min-w-0">
+                        <div className="font-semibold text-slate-900 text-sm mb-1">{stock.symbol}</div>
+                        <div className="text-xs text-slate-600 leading-relaxed break-words">
+                          {stock.companyName}
+                        </div>
+                      </div>
+                      <div className="text-[10px] px-2 py-1 bg-sky-100 rounded-md text-sky-700 font-medium whitespace-nowrap flex-shrink-0 self-start">
+                        {stock.exchange}
+                      </div>
                     </div>
                   </div>
                 ))}
