@@ -88,58 +88,58 @@ export default function AddGoldForm({ onClose, initialData }: Props) {
   };
 
   return (
-    <div className="fixed inset-0 bg-background backdrop-blur-sm z-50 flex items-center justify-center p-4">
-      <div className="glass-card w-full max-w-md p-6 relative">
-        <button onClick={onClose} className="absolute top-4 right-4 text-text-secondary hover:text-white">
+    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 relative border-2 border-sky-500">
+        <button onClick={onClose} className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition-colors">
           <X className="w-5 h-5" />
         </button>
         
-        <h2 className="text-xl font-semibold mb-6">
+        <h2 className="text-xl font-semibold mb-6 text-gray-900">
           {initialData?.id ? 'Edit Gold Asset' : 'Add Gold Asset'}
         </h2>
 
         <>
             {error && (
-              <div className="bg-red-500/10 text-red-400 p-3 rounded-lg mb-4 text-sm">
+              <div className="bg-red-50 border border-red-200 text-red-700 p-3 rounded-lg mb-4 text-sm">
                 {error}
               </div>
             )}
 
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
               <div>
-                <label className="block text-sm text-text-secondary mb-1">Asset Name</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Asset Name</label>
                 <input {...register('name')} placeholder="e.g. 24K Gold Coin" className="glass-input" />
-                {errors.name && <p className="text-red-400 text-xs mt-1">{errors.name.message}</p>}
+                {errors.name && <p className="text-red-600 font-medium text-xs mt-1 bg-red-50 border border-red-200 rounded px-2 py-1">{errors.name.message}</p>}
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm text-text-secondary mb-1">Weight (g)</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Weight (g)</label>
                   <input {...register('weightGrams')} type="number" step="0.01" className="glass-input" />
-                  {errors.weightGrams && <p className="text-red-400 text-xs mt-1">{errors.weightGrams.message}</p>}
+                  {errors.weightGrams && <p className="text-red-600 font-medium text-xs mt-1 bg-red-50 border border-red-200 rounded px-2 py-1">{errors.weightGrams.message}</p>}
                 </div>
                 <div>
-                  <label className="block text-sm text-text-secondary mb-1">Purity</label>
-                  <select {...register('purity')} className="glass-input bg-surface">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Purity</label>
+                  <select {...register('purity')} className="glass-input bg-white text-gray-900">
                     <option value="K24">24 Karat (99.9%)</option>
                     <option value="K22">22 Karat (91.6%)</option>
                     <option value="K20">20 Karat (83.3%)</option>
                     <option value="K18">18 Karat (75.0%)</option>
                   </select>
-                  {errors.purity && <p className="text-red-400 text-xs mt-1">{errors.purity.message}</p>}
+                  {errors.purity && <p className="text-red-600 font-medium text-xs mt-1 bg-red-50 border border-red-200 rounded px-2 py-1">{errors.purity.message}</p>}
                 </div>
               </div>
 
               <div>
-                <label className="block text-sm text-text-secondary mb-1">Purchase Price (Total ₹)</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Purchase Price (Total ₹)</label>
                 <input {...register('purchasePrice')} type="number" className="glass-input" />
-                {errors.purchasePrice && <p className="text-red-400 text-xs mt-1">{errors.purchasePrice.message}</p>}
+                {errors.purchasePrice && <p className="text-red-600 font-medium text-xs mt-1 bg-red-50 border border-red-200 rounded px-2 py-1">{errors.purchasePrice.message}</p>}
               </div>
 
               <div>
-                <label className="block text-sm text-text-secondary mb-1">Purchase Date</label>
-                <input {...register('purchaseDate')} type="date" className="glass-input [color-scheme:dark]" />
-                {errors.purchaseDate && <p className="text-red-400 text-xs mt-1">{errors.purchaseDate.message}</p>}
+                <label className="block text-sm font-medium text-gray-700 mb-1">Purchase Date</label>
+                <input {...register('purchaseDate')} type="date" className="glass-input" />
+                {errors.purchaseDate && <p className="text-red-600 font-medium text-xs mt-1 bg-red-50 border border-red-200 rounded px-2 py-1">{errors.purchaseDate.message}</p>}
               </div>
 
               <button type="submit" disabled={loading} className="btn-primary w-full mt-4">

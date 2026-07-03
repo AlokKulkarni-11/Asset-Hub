@@ -123,28 +123,28 @@ export default function AddStockForm({ onClose, initialData }: Props) {
   };
 
   return (
-    <div className="fixed inset-0 bg-background backdrop-blur-sm z-50 flex items-center justify-center p-4">
-      <div className="glass-card w-full max-w-md p-6 relative">
-        <button onClick={onClose} className="absolute top-4 right-4 text-text-secondary hover:text-white">
+    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 relative border-2 border-sky-500">
+        <button onClick={onClose} className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition-colors">
           <X className="w-5 h-5" />
         </button>
         
-        <h2 className="text-xl font-semibold mb-6">
+        <h2 className="text-xl font-semibold mb-6 text-gray-900">
           {initialData?.id ? 'Edit Stock Position' : 'Add Stock Position'}
         </h2>
 
         <>
             {error && (
-              <div className="bg-red-500/10 text-red-400 p-3 rounded-lg mb-4 text-sm">
+              <div className="bg-red-50 border border-red-200 text-red-700 p-3 rounded-lg mb-4 text-sm">
                 {error}
               </div>
             )}
 
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           <div className="relative z-10">
-            <label className="block text-sm text-text-secondary mb-1">Search Ticker (e.g. RELIANCE.NS)</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Search Ticker (e.g. RELIANCE.NS)</label>
             <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted" />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
               <input 
                 type="text"
                 placeholder="Search stocks..." 
@@ -189,26 +189,26 @@ export default function AddStockForm({ onClose, initialData }: Props) {
           <input type="hidden" {...register('ticker')} />
           <input type="hidden" {...register('companyName')} />
           {(errors.ticker || errors.companyName) && (
-             <p className="text-red-400 text-xs mt-1">Please select a valid stock from the dropdown.</p>
+             <p className="text-red-600 text-xs mt-1 font-medium">Please select a valid stock from the dropdown.</p>
           )}
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm text-text-secondary mb-1">Quantity</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Quantity</label>
               <input {...register('quantity')} type="number" step="0.01" className="glass-input" />
-              {errors.quantity && <p className="text-red-400 text-xs mt-1">{errors.quantity.message}</p>}
+              {errors.quantity && <p className="text-red-600 text-xs mt-1 font-medium">{errors.quantity.message}</p>}
             </div>
             <div>
-              <label className="block text-sm text-text-secondary mb-1">Avg Buy Price (₹)</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Avg Buy Price (₹)</label>
               <input {...register('averageBuyPrice')} type="number" step="0.01" className="glass-input" />
-              {errors.averageBuyPrice && <p className="text-red-400 text-xs mt-1">{errors.averageBuyPrice.message}</p>}
+              {errors.averageBuyPrice && <p className="text-red-600 text-xs mt-1 font-medium">{errors.averageBuyPrice.message}</p>}
             </div>
           </div>
 
           <div>
-            <label className="block text-sm text-text-secondary mb-1">Purchase Date</label>
-            <input {...register('purchaseDate')} type="date" className="glass-input [color-scheme:dark]" />
-            {errors.purchaseDate && <p className="text-red-400 text-xs mt-1">{errors.purchaseDate.message}</p>}
+            <label className="block text-sm font-medium text-gray-700 mb-1">Purchase Date</label>
+            <input {...register('purchaseDate')} type="date" className="glass-input" />
+            {errors.purchaseDate && <p className="text-red-600 text-xs mt-1 font-medium">{errors.purchaseDate.message}</p>}
           </div>
 
               <button type="submit" disabled={loading} className="btn-primary w-full mt-4">

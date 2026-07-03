@@ -48,10 +48,14 @@ public class JwtAuthFilter extends OncePerRequestFilter {
                     );
                     authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
                     SecurityContextHolder.getContext().setAuthentication(authToken);
+                } else {
+                    System.err.println("JWT Token validation failed for user: " + userEmail);
                 }
             }
         } catch (Exception ex) {
-            // Ignore exception here and let the filter chain proceed to return 401
+            System.err.println("JWT Filter Exception: " + ex.getMessage());
+            ex.printStackTrace();
+            // Let the filter chain proceed to return 403
         }
         filterChain.doFilter(request, response);
     }

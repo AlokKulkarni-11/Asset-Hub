@@ -14,14 +14,23 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
-// Handle 401 globally — redirect to login
+// Log errors but don't auto-redirect - let components handle it
 api.interceptors.response.use(
   (response) => response,
   (error) => {
+    // Log the error details for debugging
+    console.error('API Error:', error.response?.status, error.response?.data);
+    
     if (error.response?.status === 401) {
-      localStorage.removeItem('wealthmap_token');
-      window.location.href = '/login';
+      console.error('401 Unauthorized - Token invalid or expired');
     }
+    
+    if (error.response?.status === 403) {
+      console.error('403 Forbidden - Access Denied');
+      console.error('Error details:', error.response?.data);
+    }
+    
+    // Don't auto-logout/redirect - let the user see the error
     return Promise.reject(error);
   }
 );
