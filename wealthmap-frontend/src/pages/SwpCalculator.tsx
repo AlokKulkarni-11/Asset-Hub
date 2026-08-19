@@ -230,7 +230,7 @@ export default function SwpCalculator() {
         const gainRatio = balanceBeforeWithdrawal > 0 ? (gainBeforeWithdrawal / balanceBeforeWithdrawal) : 0;
         withdrawnGain = withdrawal * gainRatio;
 
-        if (activeParams.applyTax && taxRate > 0) {
+        if (applyTaxInput && taxRate > 0) {
           taxPaid = withdrawnGain * (taxRate / 100);
         }
 
