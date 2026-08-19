@@ -4,6 +4,8 @@ export interface SnapshotResponse {
   date: string;
   totalNetWorth: number;
   totalInvested: number;
+  totalAssets: number;
+  totalLiabilities: number;
 }
 
 export const getSnapshots = async (): Promise<SnapshotResponse[]> => {

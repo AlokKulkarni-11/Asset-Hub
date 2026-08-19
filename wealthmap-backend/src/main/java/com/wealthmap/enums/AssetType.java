@@ -14,5 +14,6 @@ public enum AssetType {
     SOVEREIGN_GOLD_BOND,
     LIC_POLICY,
     POST_OFFICE_SCHEME,
-    REAL_ESTATE
+    REAL_ESTATE,
+    CRYPTOCURRENCY
 }

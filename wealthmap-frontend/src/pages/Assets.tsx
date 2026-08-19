@@ -3,12 +3,14 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Plus, Coins, Landmark, TrendingUp, MoreVertical, Edit2, Trash2, ChevronDown, ChevronUp, Briefcase, Building2 } from 'lucide-react';
 import { getAllAssets, deleteAsset } from '../api/assets.api';
 import type { AssetResponse } from '../api/assets.api';
+import { getAnalyticsSummary } from '../api/analytics.api';
 import AssetSelectorModal from '../components/forms/AssetSelectorModal';
 import AddGoldForm from '../components/forms/AddGoldForm';
 import AddFDForm from '../components/forms/AddFDForm';
 import AddStockForm from '../components/forms/AddStockForm';
 import AddMutualFundForm from '../components/forms/AddMutualFundForm';
 import AddRealEstateForm from '../components/forms/AddRealEstateForm';
+import AddCryptoForm from '../components/forms/AddCryptoForm';
 import ConfirmDialog from '../components/ui/ConfirmDialog';
 
 export default function Assets() {
@@ -26,6 +28,11 @@ export default function Assets() {
   const { data: allAssets, isLoading } = useQuery({
     queryKey: ['assets', 'all'],
     queryFn: getAllAssets,
+  });
+
+  const { data: analytics } = useQuery({
+    queryKey: ['analyticsSummary'],
+    queryFn: getAnalyticsSummary,
   });
 
   const confirmDelete = async () => {
@@ -46,6 +53,7 @@ export default function Assets() {
     if (asset.assetType === 'FIXED_DEPOSIT') return asset.bankName || 'Other Banks';
     if (asset.assetType === 'MUTUAL_FUND') return asset.schemeName || 'Other Mutual Funds';
     if (asset.assetType === 'REAL_ESTATE') return asset.propertyType || 'Other Real Estate';
+    if (asset.assetType === 'CRYPTOCURRENCY') return asset.symbol ? asset.symbol.toUpperCase() : 'Other Cryptos';
     return 'Other';
   };
 
@@ -136,6 +144,9 @@ export default function Assets() {
       )}
       {editingAsset?.assetType === 'REAL_ESTATE' && (
         <AddRealEstateForm initialData={editingAsset} onClose={() => setEditingAsset(null)} />
+      )}
+      {editingAsset?.assetType === 'CRYPTOCURRENCY' && (
+        <AddCryptoForm initialData={editingAsset} onClose={() => setEditingAsset(null)} />
       )}
 
       {/* Grouped Assets List */}
@@ -288,6 +299,14 @@ export default function Assets() {
                                           {asset.gainLoss >= 0 ? '+' : ''}{formatCurrency(asset.gainLoss)} ({asset.gainPercent?.toFixed(2)}%)
                                         </span>
                                       </div>
+                                      {analytics?.assetAnalytics[asset.id] && (
+                                        <div className="flex justify-between text-xs pt-2 text-text-secondary border-t border-border/50">
+                                          <span>XIRR / CAGR:</span>
+                                          <span className="font-semibold text-text-primary">
+                                            {analytics.assetAnalytics[asset.id].xirr.toFixed(1)}% / {analytics.assetAnalytics[asset.id].cagr.toFixed(1)}%
+                                          </span>
+                                        </div>
+                                      )}
                                     </div>
                                   </div>
                                 ))}

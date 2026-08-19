@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useSearchParams, useNavigate } from 'react-router-dom';
-import { getMyFamily, createFamily, inviteMember, acceptInvite, getPendingInvites, getFamilyAssets, leaveFamily } from '../api/family.api';
+import { getMyFamily, createFamily, inviteMember, acceptInvite, getPendingInvites, getFamilyAssets, getFamilyRollup, leaveFamily } from '../api/family.api';
 import { Plus, Users, UserPlus, Loader2, Link, DollarSign, Mail, LogOut, ChevronDown, CheckCircle2, Circle } from 'lucide-react';
 import { useAuthStore } from '../store/authStore';
+import { ResponsiveContainer, PieChart, Pie, Cell, Tooltip as RechartsTooltip, Legend, BarChart, Bar, XAxis, YAxis, CartesianGrid } from 'recharts';
 
 export default function Family() {
   const { user } = useAuthStore();
@@ -30,6 +31,12 @@ export default function Family() {
   const { data: familyAssets, isLoading: assetsLoading } = useQuery({
     queryKey: ['family', 'assets'],
     queryFn: getFamilyAssets,
+    enabled: !!family,
+  });
+
+  const { data: familyRollup } = useQuery({
+    queryKey: ['family', 'rollup'],
+    queryFn: getFamilyRollup,
     enabled: !!family,
   });
 
@@ -209,6 +216,12 @@ export default function Family() {
     return acc;
   }, []) || [];
 
+  const rollupChartData = familyRollup?.memberBreakdown || [];
+  const rollupPieData = rollupChartData.map((member: any) => ({
+    ...member,
+    pieValue: Math.abs(member.netWorth || 0),
+  }));
+
   const sectorAssets = selectedSector ? filteredAssets?.filter(a => a.assetType === selectedSector) : [];
 
   return (
@@ -286,6 +299,75 @@ export default function Family() {
         <div className="glass-card p-6">
           <p className="text-text-secondary text-sm mb-1">Family Total Invested</p>
           <h2 className="text-display text-3xl">{formatCurrency(totalInvested)}</h2>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+        <div className="glass-card p-6">
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h3 className="text-lg font-medium text-text-primary">Family Rollup</h3>
+              <p className="text-xs text-text-secondary mt-1">Per-member asset, liability, and net worth contributions.</p>
+            </div>
+            <Users className="w-5 h-5 text-accent-500" />
+          </div>
+          <div className="grid grid-cols-3 gap-3 mb-5">
+            <div className="rounded-xl bg-surface-hover border border-border p-3">
+              <p className="text-xs text-text-secondary">Assets</p>
+              <p className="text-lg font-semibold">{formatCurrency(familyRollup?.totalFamilyAssets || 0)}</p>
+            </div>
+            <div className="rounded-xl bg-surface-hover border border-border p-3">
+              <p className="text-xs text-text-secondary">Liabilities</p>
+              <p className="text-lg font-semibold">{formatCurrency(familyRollup?.totalFamilyLiabilities || 0)}</p>
+            </div>
+            <div className="rounded-xl bg-surface-hover border border-border p-3">
+              <p className="text-xs text-text-secondary">Net Worth</p>
+              <p className="text-lg font-semibold text-accent-500">{formatCurrency(familyRollup?.totalFamilyNetWorth || 0)}</p>
+            </div>
+          </div>
+          <div className="h-[280px]">
+            <ResponsiveContainer width="100%" height="100%">
+              <PieChart>
+                <Pie
+                  data={rollupPieData}
+                  dataKey="pieValue"
+                  nameKey="userName"
+                  cx="50%"
+                  cy="45%"
+                  innerRadius={50}
+                  outerRadius={85}
+                  paddingAngle={4}
+                >
+                  {rollupChartData.map((entry: any, index: number) => (
+                    <Cell key={`rollup-cell-${entry.userId}`} fill={['#0EA5E9', '#10B981', '#F59E0B', '#6366F1', '#EC4899'][index % 5]} />
+                  ))}
+                </Pie>
+                <RechartsTooltip formatter={(value: any) => formatCurrency(Number(value) || 0)} />
+                <Legend />
+              </PieChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+
+        <div className="glass-card p-6">
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h3 className="text-lg font-medium text-text-primary">Member Comparison</h3>
+              <p className="text-xs text-text-secondary mt-1">Net worth bars across family members.</p>
+            </div>
+            <DollarSign className="w-5 h-5 text-emerald-400" />
+          </div>
+          <div className="h-[280px]">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={rollupChartData}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#475569" vertical={false} />
+                <XAxis dataKey="userName" stroke="#64748B" tick={{ fill: '#94A3B8', fontSize: 11 }} />
+                <YAxis stroke="#64748B" tick={{ fill: '#94A3B8', fontSize: 11 }} tickFormatter={(value) => `₹${(value / 100000).toFixed(1)}L`} />
+                <RechartsTooltip formatter={(value: any) => formatCurrency(Number(value) || 0)} />
+                <Bar dataKey="netWorth" fill="#0EA5E9" radius={[8, 8, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
         </div>
       </div>
 

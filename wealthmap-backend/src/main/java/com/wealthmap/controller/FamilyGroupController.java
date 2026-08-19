@@ -7,6 +7,7 @@ import com.wealthmap.entity.FamilyInvite;
 import com.wealthmap.entity.User;
 import com.wealthmap.repository.UserRepository;
 import com.wealthmap.service.FamilyGroupService;
+import com.wealthmap.service.FamilyRollupService;
 import org.springframework.security.core.Authentication;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -25,6 +26,9 @@ public class FamilyGroupController {
 
     @Autowired
     private UserRepository userRepository;
+
+    @Autowired
+    private FamilyRollupService familyRollupService;
 
     @PostMapping("/create")
     public ResponseEntity<?> createFamily(Authentication authentication, @RequestBody CreateFamilyRequest req) {
@@ -163,6 +167,15 @@ public class FamilyGroupController {
         }
 
         return ResponseEntity.ok(familyAssets);
+    }
+
+    @GetMapping("/rollup")
+    public ResponseEntity<?> getFamilyRollup(Authentication authentication) {
+        try {
+            return ResponseEntity.ok(familyRollupService.getFamilyRollup(authentication.getName()));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
     }
 }
 

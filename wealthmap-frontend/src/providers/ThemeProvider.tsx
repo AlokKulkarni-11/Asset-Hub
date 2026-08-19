@@ -23,26 +23,21 @@ export function ThemeProvider({
   children,
   defaultTheme = "light",
 }: ThemeProviderProps) {
-  const [theme, setTheme] = useState<Theme>(
-    () => (localStorage.getItem("wealthmap-theme") as Theme) || defaultTheme
-  );
+  const [theme, setTheme] = useState<Theme>("light");
 
   useEffect(() => {
     const root = window.document.documentElement;
 
-    root.classList.remove("light", "dark");
-    root.classList.add(theme);
+    root.classList.remove("dark");
+    root.classList.add("light");
     
-    // Also set color-scheme for native browser scrollbars/inputs
-    root.style.colorScheme = theme;
-  }, [theme]);
+    // Force light color-scheme for native browser scrollbars/inputs
+    root.style.colorScheme = "light";
+  }, []);
 
   const value = {
-    theme,
-    setTheme: (theme: Theme) => {
-      localStorage.setItem("wealthmap-theme", theme);
-      setTheme(theme);
-    },
+    theme: "light" as Theme,
+    setTheme: () => {},
   };
 
   return (

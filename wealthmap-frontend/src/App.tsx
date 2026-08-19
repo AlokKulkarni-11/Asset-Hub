@@ -10,6 +10,8 @@ import Assets from './pages/Assets';
 import Family from './pages/Family';
 import Maturities from './pages/Maturities';
 import Profile from './pages/Profile';
+import Liabilities from './pages/Liabilities';
+import Goals from './pages/Goals';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -35,6 +37,8 @@ function App() {
               <Route element={<AppLayout />}>
                 <Route path="/" element={<Dashboard />} />
                 <Route path="/assets" element={<Assets />} />
+                <Route path="/liabilities" element={<Liabilities />} />
+                <Route path="/goals" element={<Goals />} />
                 <Route path="/family" element={<Family />} />
                 <Route path="/maturities" element={<Maturities />} />
                 <Route path="/profile" element={<Profile />} />

@@ -104,6 +104,10 @@ public class FixedDepositService {
         response.setFamilyMemberId(item.getUser().getId());
         response.setFamilyMemberName(item.getUser().getName());
         response.setInvestedAmount(item.getPrincipalAmount());
+        response.setStartDate(item.getStartDate());
+        response.setMaturityDate(item.getMaturityDate());
+        response.setInterestRate(item.getInterestRate());
+        response.setBankName(item.getBankName());
 
         response.setBankName(item.getBankName());
         response.setStartDate(item.getStartDate());

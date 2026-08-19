@@ -190,3 +190,41 @@ export const updateStockAsset = async (id: number, payload: StockRequest): Promi
   const { data } = await api.put(`/assets/stock/${id}`, payload);
   return data;
 };
+
+// Crypto Operations
+export interface CryptoRequest {
+  coinId: string;
+  symbol: string;
+  name: string;
+  purchaseDate: string;
+  units: number;
+  averageBuyPrice: number;
+  notes?: string;
+}
+
+export interface CryptoSearchResponse {
+  id: string;
+  name: string;
+  symbol: string;
+}
+
+export const searchCrypto = async (query: string): Promise<CryptoSearchResponse[]> => {
+  if (!query) return [];
+  const { data } = await api.get(`/assets/crypto/search?q=${query}`);
+  return data;
+};
+
+export const getCryptoAsset = async (id: number): Promise<any> => {
+  const { data } = await api.get(`/assets/crypto/${id}`);
+  return data;
+};
+
+export const addCryptoAsset = async (payload: CryptoRequest): Promise<AssetResponse> => {
+  const { data } = await api.post('/assets/crypto', payload);
+  return data;
+};
+
+export const updateCryptoAsset = async (id: number, payload: CryptoRequest): Promise<AssetResponse> => {
+  const { data } = await api.put(`/assets/crypto/${id}`, payload);
+  return data;
+};

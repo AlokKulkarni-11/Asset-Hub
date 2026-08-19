@@ -32,4 +32,10 @@ public class NetWorthSnapshot {
 
     @Column(nullable = false, precision = 15, scale = 2)
     private BigDecimal totalInvested;
+
+    @Column(precision = 15, scale = 2)
+    private BigDecimal totalAssets;
+
+    @Column(precision = 15, scale = 2)
+    private BigDecimal totalLiabilities;
 }

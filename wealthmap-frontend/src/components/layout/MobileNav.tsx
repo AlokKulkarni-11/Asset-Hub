@@ -1,14 +1,15 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
-import { LayoutDashboard, Wallet, Users, Calendar, Settings } from 'lucide-react';
+import { LayoutDashboard, Wallet, Users, Calendar, TrendingDown, Target } from 'lucide-react';
 
 export default function MobileNav() {
   const navItems = [
     { name: 'Dashboard', path: '/', icon: LayoutDashboard },
     { name: 'Assets', path: '/assets', icon: Wallet },
+    { name: 'Liabilities', path: '/liabilities', icon: TrendingDown },
+    { name: 'Goals', path: '/goals', icon: Target },
     { name: 'Family', path: '/family', icon: Users },
     { name: 'Upcoming', path: '/maturities', icon: Calendar },
-    { name: 'Profile', path: '/profile', icon: Settings },
   ];
 
   return (

@@ -21,6 +21,24 @@ export interface InviteResponse {
   createdAt: string;
 }
 
+export interface FamilyRollupMember {
+  userId: number;
+  userName: string;
+  userEmail: string;
+  totalAssets: number;
+  totalLiabilities: number;
+  netWorth: number;
+  contributionPercentage: number;
+}
+
+export interface FamilyRollupResponse {
+  familyName: string;
+  totalFamilyAssets: number;
+  totalFamilyLiabilities: number;
+  totalFamilyNetWorth: number;
+  memberBreakdown: FamilyRollupMember[];
+}
+
 export const getMyFamily = async (): Promise<FamilyDetailsResponse | null> => {
   const response = await api.get('/family/me');
   if (response.status === 204) return null;
@@ -54,5 +72,10 @@ export const getPendingInvites = async (): Promise<InviteResponse[]> => {
 
 export const getFamilyAssets = async (): Promise<any[]> => {
   const response = await api.get('/family/assets');
+  return response.data;
+};
+
+export const getFamilyRollup = async (): Promise<FamilyRollupResponse> => {
+  const response = await api.get('/family/rollup');
   return response.data;
 };

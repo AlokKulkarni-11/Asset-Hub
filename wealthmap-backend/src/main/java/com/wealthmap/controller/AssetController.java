@@ -10,8 +10,10 @@ import com.wealthmap.service.assets.GoldService;
 import com.wealthmap.service.assets.StockService;
 import com.wealthmap.service.assets.MutualFundService;
 import com.wealthmap.service.assets.RealEstateService;
+import com.wealthmap.service.assets.CryptoService;
 import com.wealthmap.dto.request.MutualFundRequest;
 import com.wealthmap.dto.request.RealEstateRequest;
+import com.wealthmap.dto.request.CryptoRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
@@ -30,6 +32,7 @@ public class AssetController {
     private final StockService stockService;
     private final MutualFundService mfService;
     private final RealEstateService reService;
+    private final CryptoService cryptoService;
     private final AssetRepository assetRepository;
     private final UserRepository userRepository;
 
@@ -43,6 +46,7 @@ public class AssetController {
         allAssets.addAll(stockService.getAllStocksForUser(userEmail));
         allAssets.addAll(mfService.getAllMutualFundsForUser(userEmail));
         allAssets.addAll(reService.getAllRealEstateForUser(userEmail));
+        allAssets.addAll(cryptoService.getAllCryptoForUser(userEmail));
         
         return ResponseEntity.ok(allAssets);
     }
@@ -80,6 +84,27 @@ public class AssetController {
     @PutMapping("/realestate/{id}")
     public ResponseEntity<AssetResponse> updateRealEstate(@PathVariable Long id, @RequestBody RealEstateRequest request, Authentication authentication) {
         return ResponseEntity.ok(reService.updateRealEstate(id, request, authentication.getName()));
+    }
+
+    // Crypto Endpoints
+    @GetMapping("/crypto/search")
+    public ResponseEntity<Object> searchCrypto(@RequestParam String q) {
+        return ResponseEntity.ok(cryptoService.searchCrypto(q));
+    }
+
+    @GetMapping("/crypto/{id}")
+    public ResponseEntity<AssetResponse> getCryptoById(@PathVariable Long id, Authentication authentication) {
+        return ResponseEntity.ok(cryptoService.getCryptoById(id, authentication.getName()));
+    }
+
+    @PostMapping("/crypto")
+    public ResponseEntity<AssetResponse> addCrypto(@RequestBody CryptoRequest request, Authentication authentication) {
+        return ResponseEntity.ok(cryptoService.addCrypto(request, authentication.getName()));
+    }
+
+    @PutMapping("/crypto/{id}")
+    public ResponseEntity<AssetResponse> updateCrypto(@PathVariable Long id, @RequestBody CryptoRequest request, Authentication authentication) {
+        return ResponseEntity.ok(cryptoService.updateCrypto(id, request, authentication.getName()));
     }
 
     @DeleteMapping("/{id}")

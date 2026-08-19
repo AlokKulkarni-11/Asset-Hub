@@ -5,13 +5,14 @@ import AddFDForm from './AddFDForm';
 import AddStockForm from './AddStockForm';
 import AddMutualFundForm from './AddMutualFundForm';
 import AddRealEstateForm from './AddRealEstateForm';
+import AddCryptoForm from './AddCryptoForm';
 
 interface Props {
   onClose: () => void;
 }
 
 type AssetCategory = 'MARKET' | 'FIXED' | 'PHYSICAL' | null;
-type AssetType = 'GOLD' | 'STOCK' | 'MUTUAL_FUND' | 'FD' | 'REAL_ESTATE' | null;
+type AssetType = 'GOLD' | 'STOCK' | 'MUTUAL_FUND' | 'FD' | 'REAL_ESTATE' | 'CRYPTOCURRENCY' | null;
 
 export default function AssetSelectorModal({ onClose }: Props) {
   const [selectedType, setSelectedType] = useState<AssetType>(null);
@@ -22,6 +23,7 @@ export default function AssetSelectorModal({ onClose }: Props) {
       items: [
         { id: 'STOCK', name: 'Stocks', icon: TrendingUp, comingSoon: false },
         { id: 'MUTUAL_FUND', name: 'Mutual Funds', icon: Briefcase, comingSoon: false },
+        { id: 'CRYPTOCURRENCY', name: 'Cryptocurrency', icon: Coins, comingSoon: false },
       ]
     },
     {
@@ -57,6 +59,10 @@ export default function AssetSelectorModal({ onClose }: Props) {
 
   if (selectedType === 'REAL_ESTATE') {
     return <AddRealEstateForm onClose={onClose} />;
+  }
+
+  if (selectedType === 'CRYPTOCURRENCY') {
+    return <AddCryptoForm onClose={onClose} />;
   }
   if (selectedType) {
     return (

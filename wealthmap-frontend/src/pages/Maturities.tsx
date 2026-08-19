@@ -1,14 +1,26 @@
 import React, { useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { getFamilyAssets } from '../api/family.api';
+import { getAllAssets } from '../api/assets.api';
+import { getAllLiabilities } from '../api/liabilities.api';
+import { getNotifications } from '../api/alerts.api';
 import { AssetResponse } from '../api/assets.api';
-import { Clock, Loader2, TrendingUp, AlertTriangle } from 'lucide-react';
+import { Clock, Loader2, TrendingUp, AlertTriangle, Bell, ShieldAlert } from 'lucide-react';
 import { differenceInDays, parseISO } from 'date-fns';
 
 export default function Maturities() {
-  const { data: familyAssets, isLoading } = useQuery({
-    queryKey: ['family', 'assets'],
-    queryFn: getFamilyAssets,
+  const { data: assets, isLoading: assetsLoading } = useQuery({
+    queryKey: ['assets', 'all'],
+    queryFn: getAllAssets,
+  });
+
+  const { data: liabilities, isLoading: liabilitiesLoading } = useQuery({
+    queryKey: ['liabilities', 'all'],
+    queryFn: getAllLiabilities,
+  });
+
+  const { data: notifications, isLoading: notificationsLoading } = useQuery({
+    queryKey: ['notifications'],
+    queryFn: getNotifications,
   });
 
   const formatCurrency = (value: number) => {
@@ -20,37 +32,56 @@ export default function Maturities() {
   };
 
   const maturities = useMemo(() => {
-    if (!familyAssets) return [];
+    if (!assets && !liabilities) return [];
 
     const today = new Date();
-    
-    return familyAssets
-      .filter((a: AssetResponse) => a.maturityDate) // Only items with maturity dates
+    const fixedDeposits = (assets || [])
+      .filter((a: AssetResponse) => a.maturityDate)
       .map((a: AssetResponse) => {
         const matDate = parseISO(a.maturityDate!);
         const daysRemaining = differenceInDays(matDate, today);
-        
-        // Estimate Maturity Amount (Simple approximation if interest rate is provided)
+
         let estimatedAmount = a.investedAmount;
         if (a.assetType === 'FIXED_DEPOSIT' && a.interestRate && a.startDate) {
-           const start = parseISO(a.startDate);
-           const totalDays = differenceInDays(matDate, start);
-           const totalYears = totalDays / 365.25;
-           // Simple A = P(1 + rt) approximation for display
-           estimatedAmount = a.investedAmount * (1 + ((a.interestRate/100) * totalYears));
+          const start = parseISO(a.startDate);
+          const totalDays = differenceInDays(matDate, start);
+          const totalYears = totalDays / 365.25;
+          estimatedAmount = a.investedAmount * (1 + ((a.interestRate / 100) * totalYears));
         }
 
         return {
           ...a,
+          label: 'Fixed Deposit',
           matDate,
           daysRemaining,
-          estimatedAmount
+          estimatedAmount,
+          reminderType: 'FD',
+        };
+      });
+
+    const loanPayoffs = (liabilities || [])
+      .filter((l: any) => l.startDate && l.tenureMonths)
+      .map((l: any) => {
+        const startDate = parseISO(l.startDate);
+        const maturity = new Date(startDate);
+        maturity.setMonth(maturity.getMonth() + l.tenureMonths);
+        const daysRemaining = differenceInDays(maturity, today);
+        return {
+          ...l,
+          name: `${l.name} (Loan Payoff)`,
+          label: 'Loan Payoff',
+          matDate: maturity,
+          daysRemaining,
+          estimatedAmount: l.outstandingBalance,
+          reminderType: 'LOAN',
         };
       })
-      .sort((a, b) => a.daysRemaining - b.daysRemaining);
-  }, [familyAssets]);
 
-  if (isLoading) {
+    return [...fixedDeposits, ...loanPayoffs]
+      .sort((a, b) => a.daysRemaining - b.daysRemaining);
+  }, [assets, liabilities]);
+
+  if (assetsLoading || liabilitiesLoading || notificationsLoading) {
     return (
       <div className="flex items-center justify-center h-[50vh]">
         <Loader2 className="w-8 h-8 animate-spin text-accent-500" />
@@ -60,12 +91,32 @@ export default function Maturities() {
 
   const upcoming30Days = maturities.filter(m => m.daysRemaining >= 0 && m.daysRemaining <= 30);
   const totalUpcomingValue = upcoming30Days.reduce((sum, m) => sum + m.estimatedAmount, 0);
+  const reminderNotifications = notifications?.filter((n: any) => n.type === 'MATURITY_REMINDER' || n.type === 'DIGEST' || n.type === 'WEEKLY_DIGEST' || n.type === 'MONTHLY_DIGEST') || [];
 
   return (
     <div className="space-y-8 animate-in slide-in-from-bottom-4 fade-in duration-500">
       <div>
         <h1 className="text-heading text-2xl font-dmsans">Upcoming Maturities</h1>
         <p className="text-text-secondary mt-2">Track fixed deposits and other assets nearing completion.</p>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="glass-card p-6 border border-sky-500/20 bg-sky-500/5">
+          <div className="flex items-center gap-2 mb-2">
+            <Bell className="w-4 h-4 text-sky-400" />
+            <p className="text-text-secondary text-sm">Scheduled reminders</p>
+          </div>
+          <h2 className="text-display text-3xl text-sky-400">{reminderNotifications.length} Sent</h2>
+          <p className="text-xs text-text-muted mt-2">These entries come from the Brevo-backed scheduler and in-app inbox.</p>
+        </div>
+        <div className="glass-card p-6">
+          <div className="flex items-center gap-2 mb-2">
+            <ShieldAlert className="w-4 h-4 text-amber-400" />
+            <p className="text-text-secondary text-sm">Reminder cadence</p>
+          </div>
+          <h2 className="text-display text-3xl text-amber-400">X days before due</h2>
+          <p className="text-xs text-text-muted mt-2">Default reminder window is configured on the backend scheduler.</p>
+        </div>
       </div>
 
       {/* Summary Cards */}
@@ -143,25 +194,30 @@ export default function Maturities() {
                          <p className="text-xs text-text-muted mb-1">Principal</p>
                          <p className="font-medium">{formatCurrency(item.investedAmount)}</p>
                        </div>
-                       <div>
-                         <p className="text-xs text-text-muted mb-1">Est. Maturity</p>
-                         <p className="font-medium text-accent-500">{formatCurrency(item.estimatedAmount)}</p>
-                       </div>
-                    </div>
+                        <div>
+                          <p className="text-xs text-text-muted mb-1">Est. Maturity</p>
+                          <p className="font-medium text-accent-500">{formatCurrency(item.estimatedAmount)}</p>
+                        </div>
+                     </div>
 
                     <div className="mt-3 flex flex-wrap items-center gap-2">
                        <div className="text-[10px] bg-background px-2 py-1 rounded border border-white/5 text-text-muted">
                          Owner: {item.familyMemberName}
                        </div>
-                       {item.interestRate && (
-                         <div className="text-[10px] bg-background px-2 py-1 rounded border border-white/5 text-text-muted">
-                           {item.interestRate}% Interest
-                         </div>
-                       )}
-                    </div>
-                  </div>
-                </div>
-              );
+                        {item.interestRate && (
+                          <div className="text-[10px] bg-background px-2 py-1 rounded border border-white/5 text-text-muted">
+                            {item.interestRate}% Interest
+                          </div>
+                        )}
+                        {item.reminderType === 'LOAN' && (
+                          <div className="text-[10px] bg-background px-2 py-1 rounded border border-white/5 text-text-muted">
+                            Loan payoff reminder
+                          </div>
+                        )}
+                     </div>
+                   </div>
+                 </div>
+               );
             })}
           </div>
         )}

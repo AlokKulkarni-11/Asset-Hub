@@ -6,6 +6,7 @@ import com.wealthmap.repository.NetWorthSnapshotRepository;
 import com.wealthmap.repository.UserRepository;
 import com.wealthmap.dto.response.SnapshotResponse;
 import com.wealthmap.dto.response.AssetResponse;
+import com.wealthmap.dto.response.LiabilityResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -33,9 +34,25 @@ public class SnapshotService {
     @Autowired
     private com.wealthmap.service.assets.StockService stockService;
 
+    @Autowired
+    private com.wealthmap.service.assets.MutualFundService mfService;
+
+    @Autowired
+    private com.wealthmap.service.assets.RealEstateService reService;
+
+    @Autowired
+    private com.wealthmap.service.assets.CryptoService cryptoService;
+
+    @Autowired
+    private com.wealthmap.service.LiabilityService liabilityService;
+
     public List<SnapshotResponse> getSnapshotsForUser(Long userId) {
         return snapshotRepository.findByUserIdOrderBySnapshotDateAsc(userId).stream()
-                .map(s -> new SnapshotResponse(s.getSnapshotDate(), s.getTotalNetWorth(), s.getTotalInvested()))
+                .map(s -> {
+                    BigDecimal assets = s.getTotalAssets() != null ? s.getTotalAssets() : s.getTotalNetWorth();
+                    BigDecimal liabilities = s.getTotalLiabilities() != null ? s.getTotalLiabilities() : BigDecimal.ZERO;
+                    return new SnapshotResponse(s.getSnapshotDate(), s.getTotalNetWorth(), s.getTotalInvested(), assets, liabilities);
+                })
                 .collect(Collectors.toList());
     }
 
@@ -48,14 +65,25 @@ public class SnapshotService {
         currentAssets.addAll(goldService.getAllGoldForUser(user.getEmail()));
         currentAssets.addAll(fdService.getAllFDsForUser(user.getEmail()));
         currentAssets.addAll(stockService.getAllStocksForUser(user.getEmail()));
+        currentAssets.addAll(mfService.getAllMutualFundsForUser(user.getEmail()));
+        currentAssets.addAll(reService.getAllRealEstateForUser(user.getEmail()));
+        currentAssets.addAll(cryptoService.getAllCryptoForUser(user.getEmail()));
         
         BigDecimal totalInvested = currentAssets.stream()
                 .map(AssetResponse::getInvestedAmount)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
                 
-        BigDecimal totalCurrentValue = currentAssets.stream()
+        BigDecimal totalAssets = currentAssets.stream()
                 .map(AssetResponse::getCurrentValue)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        List<LiabilityResponse> currentLiabilities = liabilityService.getAllLiabilitiesForUser(user.getEmail());
+        
+        BigDecimal totalLiabilities = currentLiabilities.stream()
+                .map(LiabilityResponse::getOutstandingBalance)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        BigDecimal totalNetWorth = totalAssets.subtract(totalLiabilities);
                 
         // Check if snapshot already exists for today
         LocalDate today = LocalDate.now();
@@ -70,10 +98,12 @@ public class SnapshotService {
         todaySnapshot.setUser(user);
         todaySnapshot.setSnapshotDate(today);
         todaySnapshot.setTotalInvested(totalInvested);
-        todaySnapshot.setTotalNetWorth(totalCurrentValue);
+        todaySnapshot.setTotalNetWorth(totalNetWorth);
+        todaySnapshot.setTotalAssets(totalAssets);
+        todaySnapshot.setTotalLiabilities(totalLiabilities);
         
         snapshotRepository.save(todaySnapshot);
         
-        return new SnapshotResponse(today, totalCurrentValue, totalInvested);
+        return new SnapshotResponse(today, totalNetWorth, totalInvested, totalAssets, totalLiabilities);
     }
 }

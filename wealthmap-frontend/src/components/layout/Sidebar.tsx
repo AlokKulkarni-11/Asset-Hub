@@ -1,6 +1,6 @@
 import React from 'react';
 import { NavLink, Link } from 'react-router-dom';
-import { LayoutDashboard, Wallet, Users, Calendar, Settings, LogOut } from 'lucide-react';
+import { LayoutDashboard, Wallet, Users, Calendar, Settings, LogOut, TrendingDown, Target } from 'lucide-react';
 import { useAuthStore } from '../../store/authStore';
 
 interface SidebarProps {
@@ -14,6 +14,8 @@ export default function Sidebar({ className = '', onLinkClick }: SidebarProps) {
   const navItems = [
     { name: 'Dashboard', path: '/', icon: LayoutDashboard },
     { name: 'Assets', path: '/assets', icon: Wallet },
+    { name: 'Liabilities', path: '/liabilities', icon: TrendingDown },
+    { name: 'Goals', path: '/goals', icon: Target },
     { name: 'Family', path: '/family', icon: Users },
     { name: 'Upcoming', path: '/maturities', icon: Calendar },
   ];

@@ -99,4 +99,88 @@ public class EmailService {
             System.err.println("Error sending family invite email: " + e.getMessage());
         }
     }
+
+    public void sendPriceAlertEmail(String toEmail, String assetName, double targetPrice, double currentPrice, String condition) {
+        try {
+            String subject = "Asset Hub Alert: " + assetName + " has crossed target price!";
+            String htmlContent = "<h2>Asset Hub Price Alert</h2>" +
+                    "<p>Your asset <b>" + assetName + "</b> has triggered your target price alert.</p>" +
+                    "<ul>" +
+                    "<li><b>Condition:</b> " + condition + " ₹" + String.format("%.2f", targetPrice) + "</li>" +
+                    "<li><b>Current Live Price:</b> ₹" + String.format("%.2f", currentPrice) + "</li>" +
+                    "</ul>" +
+                    "<p>Log in to your Asset Hub dashboard to review your portfolio allocation.</p>";
+
+            sendGenericBrevoEmail(toEmail, subject, htmlContent);
+        } catch (Exception e) {
+            System.err.println("Failed to send price alert email: " + e.getMessage());
+        }
+    }
+
+    public void sendMaturityReminderEmail(String toEmail, String title, String message) {
+        try {
+            String subject = "Asset Hub Reminder: " + title;
+            String htmlContent = "<h2>Upcoming Maturity / Payoff Reminder</h2>" +
+                    "<p>" + message + "</p>" +
+                    "<p>Log in to Asset Hub to review upcoming maturities.</p>";
+
+            sendGenericBrevoEmail(toEmail, subject, htmlContent);
+        } catch (Exception e) {
+            System.err.println("Failed to send maturity reminder email: " + e.getMessage());
+        }
+    }
+
+    public void sendNetWorthDigestEmail(String toEmail, String userName, double netWorth, double liquidAssets, int assetCount) {
+        try {
+            String subject = "Your Asset Hub Weekly Net Worth Digest";
+            String htmlContent = "<h2>Hello " + userName + ",</h2>" +
+                    "<p>Here is your current portfolio digest summary from <b>Asset Hub</b>:</p>" +
+                    "<ul>" +
+                    "<li><b>Total Net Worth:</b> ₹" + String.format("%,.0f", netWorth) + "</li>" +
+                    "<li><b>Liquid Capital:</b> ₹" + String.format("%,.0f", liquidAssets) + "</li>" +
+                    "<li><b>Total Tracked Assets:</b> " + assetCount + "</li>" +
+                    "</ul>" +
+                    "<p>Keep up the great work building your financial independence!</p>";
+
+            sendGenericBrevoEmail(toEmail, subject, htmlContent);
+        } catch (Exception e) {
+            System.err.println("Failed to send digest email: " + e.getMessage());
+        }
+    }
+
+    public void sendCustomHtmlEmail(String toEmail, String subject, String htmlContent) {
+        try {
+            sendGenericBrevoEmail(toEmail, subject, htmlContent);
+        } catch (Exception e) {
+            System.err.println("Failed to send custom email: " + e.getMessage());
+        }
+    }
+
+    private void sendGenericBrevoEmail(String toEmail, String subject, String htmlContent) throws Exception {
+        if (apiKey == null || apiKey.isEmpty() || senderEmail == null || senderEmail.isEmpty()) {
+            System.out.println("[BREVO MOCK EMAIL] To: " + toEmail + " | Subject: " + subject);
+            return;
+        }
+
+        String escapedHtml = htmlContent.replace("\"", "\\\"");
+        String jsonPayload = """
+            {
+                "sender": { "name": "Asset Hub Alerts", "email": "%s" },
+                "to": [{ "email": "%s" }],
+                "subject": "%s",
+                "htmlContent": "%s"
+            }
+            """.formatted(senderEmail, toEmail, subject, escapedHtml);
+
+        HttpClient client = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(10)).build();
+        HttpRequest request = HttpRequest.newBuilder()
+                .uri(URI.create("https://api.brevo.com/v3/smtp/email"))
+                .header("accept", "application/json")
+                .header("api-key", apiKey)
+                .header("content-type", "application/json")
+                .POST(HttpRequest.BodyPublishers.ofString(jsonPayload))
+                .build();
+
+        client.send(request, HttpResponse.BodyHandlers.ofString());
+    }
 }
