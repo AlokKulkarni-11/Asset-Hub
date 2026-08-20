@@ -14,8 +14,17 @@ export default function Topbar() {
 
   return (
     <header className="h-16 border-b border-border bg-background/50 backdrop-blur-md flex items-center justify-between px-4 md:px-8 shrink-0 relative z-10">
-      <div className="flex items-center gap-4">
-        <h2 className="text-xl font-medium hidden sm:block">
+      {/* Mobile Branding (Logo + Name) */}
+      <div className="flex items-center gap-3 md:hidden">
+        <Link to="/" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
+          <img src="/AssetHub_Logo.png" alt="AssetHub Logo" className="w-7 h-7 shrink-0 object-contain" />
+          <img src="/AssetHub_Name.png" alt="Asset Hub" className="h-5 object-contain" />
+        </Link>
+      </div>
+
+      {/* Desktop Greeting */}
+      <div className="hidden md:flex items-center gap-4">
+        <h2 className="text-lg font-medium">
           {greeting}, {user?.name?.split(' ')[0] || 'User'} 👋
         </h2>
       </div>

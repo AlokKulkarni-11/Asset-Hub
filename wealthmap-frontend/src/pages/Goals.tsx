@@ -1,5 +1,5 @@
 // @ts-nocheck
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { getAllGoals, createGoal, updateGoal, deleteGoal } from '../api/goals.api';
 import type { GoalResponse } from '../api/goals.api';
@@ -37,8 +37,8 @@ export default function Goals() {
   const [monthlyExpenseToday, setMonthlyExpenseToday] = useState(50000);
   const [expectedReturnRate, setExpectedReturnRate] = useState(10);
   const [inflationRate, setInflationRate] = useState(6);
-  const [retirementResult, setRetirementResult] = useState<RetirementResponse | null>(null);
-  const [calculatingRetirement, setCalculatingRetirement] = useState(false);
+  const [useCustomNetWorth, setUseCustomNetWorth] = useState(false);
+  const [customNetWorthInput, setCustomNetWorthInput] = useState('');
 
   // Queries
   const { data: goals, isLoading: goalsLoading } = useQuery({
@@ -136,22 +136,37 @@ export default function Goals() {
   };
 
 
-  // Run Retirement Calculation
-  const handleCalculateRetirement = async () => {
-    setCalculatingRetirement(true);
-    try {
-      const res = await calculateRetirement({
-        currentAge: Number(currentAge),
-        retirementAge: Number(retirementAge),
-        desiredMonthlyExpenseToday: Number(monthlyExpenseToday),
-        expectedReturnRate: Number(expectedReturnRate),
-        inflationRate: Number(inflationRate)
-      });
-      setRetirementResult(res);
-    } finally {
-      setCalculatingRetirement(false);
-    }
-  };
+  const activeNetWorth = useCustomNetWorth ? (Number(customNetWorthInput) || 0) : netWorth;
+
+  // Reactively calculate retirement on param changes
+  const retirementResult = useMemo(() => {
+    const yearsToRetirement = Math.max(1, retirementAge - currentAge);
+    const monthlyExpenseTodayVal = Number(monthlyExpenseToday) || 0;
+    const inflationRateVal = (Number(inflationRate) || 0) / 100.0;
+    const expectedReturnRateVal = (Number(expectedReturnRate) || 0) / 100.0;
+
+    const inflationFactor = Math.pow(1.0 + inflationRateVal, yearsToRetirement);
+    const adjustedMonthlyExpense = monthlyExpenseTodayVal * inflationFactor;
+    const annualExpenseAtRetirement = adjustedMonthlyExpense * 12.0;
+
+    // Required Retirement Corpus using Rule of 25 (or 4% safe withdrawal rule, corresponding to 25 years of retirement)
+    const requiredRetirementCorpus = annualExpenseAtRetirement * 25.0;
+
+    // Projected Net Worth at Retirement Age
+    const projectedNetWorthAtRetirement = activeNetWorth * Math.pow(1.0 + expectedReturnRateVal, yearsToRetirement);
+    const shortfallOrSurplus = projectedNetWorthAtRetirement - requiredRetirementCorpus;
+    const readiness = requiredRetirementCorpus > 0 ? (projectedNetWorthAtRetirement / requiredRetirementCorpus) * 100.0 : 100.0;
+    const readinessPercentage = Math.min(100.0, Math.max(0.0, readiness));
+
+    return {
+      yearsToRetirement,
+      inflationAdjustedMonthlyExpense: adjustedMonthlyExpense,
+      requiredRetirementCorpus,
+      projectedNetWorthAtRetirement,
+      shortfallOrSurplus,
+      readinessPercentage
+    };
+  }, [currentAge, retirementAge, monthlyExpenseToday, expectedReturnRate, inflationRate, activeNetWorth]);
 
   return (
     <div className="space-y-6">
@@ -405,9 +420,37 @@ export default function Goals() {
                 <input type="range" min="3" max="10" step="0.5" value={inflationRate} onChange={e => setInflationRate(Number(e.target.value))} className="w-full accent-accent-500 h-2 bg-surface-hover rounded" />
               </div>
 
-              <button onClick={handleCalculateRetirement} className="btn-primary w-full text-xs mt-2">
-                {calculatingRetirement ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Run Projection'}
-              </button>
+              {/* Custom Net Worth Selection */}
+              <div className="border-t border-border pt-3 space-y-2">
+                <div className="flex items-center gap-2">
+                  <input 
+                    type="checkbox"
+                    id="useCustomNetWorth"
+                    checked={useCustomNetWorth}
+                    onChange={e => setUseCustomNetWorth(e.target.checked)}
+                    className="rounded border-border text-accent-500 focus:ring-accent-500 cursor-pointer"
+                  />
+                  <label htmlFor="useCustomNetWorth" className="font-semibold text-text-secondary cursor-pointer select-none">
+                    Use Custom Net Worth
+                  </label>
+                </div>
+                {useCustomNetWorth ? (
+                  <div className="animate-fadeIn">
+                    <label className="block text-[10px] font-semibold text-text-secondary mb-1">Custom Net Worth Amount (₹)</label>
+                    <input 
+                      type="number"
+                      value={customNetWorthInput}
+                      onChange={e => setCustomNetWorthInput(e.target.value)}
+                      placeholder={`e.g. ${Math.round(netWorth)}`}
+                      className="glass-input text-xs font-semibold"
+                    />
+                  </div>
+                ) : (
+                  <div className="text-[10px] text-text-muted leading-relaxed">
+                    Linked to calculated Net Worth: <strong className="text-accent-500">{formatCurrency(netWorth)}</strong>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
 
@@ -417,45 +460,43 @@ export default function Goals() {
                 <Calculator className="w-6 h-6 text-accent-500" />
                 <h3 className="text-xl font-bold text-text-primary">Retirement Readiness Analysis</h3>
               </div>
-              <p className="text-xs text-text-secondary mb-6">Inflation-adjusted corpus projection using the 4% annual withdrawal rule.</p>
+              <p className="text-xs text-text-secondary mb-6">Inflation-adjusted corpus projection using the 4% annual withdrawal rule (assumes 25 years of post-retirement coverage).</p>
 
-              {retirementResult ? (
-                <div className="space-y-6">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="p-4 rounded-xl bg-surface-hover border border-border">
-                      <p className="text-xs text-text-secondary font-medium mb-1">Years to Retirement</p>
-                      <p className="text-2xl font-bold text-text-primary">{retirementResult.yearsToRetirement} Years</p>
-                    </div>
-                    <div className="p-4 rounded-xl bg-surface-hover border border-border">
-                      <p className="text-xs text-text-secondary font-medium mb-1">Inflation-Adjusted Monthly Expense</p>
-                      <p className="text-2xl font-bold text-accent-500">{formatCurrency(retirementResult.inflationAdjustedMonthlyExpense)}</p>
-                    </div>
-                    <div className="p-4 rounded-xl bg-surface-hover border border-border">
-                      <p className="text-xs text-text-secondary font-medium mb-1">Required Retirement Corpus</p>
-                      <p className="text-2xl font-bold text-emerald-500">{formatCurrency(retirementResult.requiredRetirementCorpus)}</p>
-                    </div>
-                    <div className="p-4 rounded-xl bg-surface-hover border border-border">
-                      <p className="text-xs text-text-secondary font-medium mb-1">Projected Net Worth at Age {retirementAge}</p>
-                      <p className="text-2xl font-bold text-indigo-500">{formatCurrency(retirementResult.projectedNetWorthAtRetirement)}</p>
-                    </div>
+              <div className="space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="p-4 rounded-xl bg-surface-hover border border-border">
+                    <p className="text-xs text-text-secondary font-medium mb-1">Years to Retirement</p>
+                    <p className="text-2xl font-bold text-text-primary">{retirementResult.yearsToRetirement} Years</p>
+                    <p className="text-[10px] text-text-muted mt-1">Age {currentAge} to Age {retirementAge}.</p>
                   </div>
-
-                  {/* Readiness Progress Bar */}
-                  <div className="p-4 rounded-xl bg-surface border border-border space-y-2">
-                    <div className="flex justify-between text-sm font-bold">
-                      <span className="text-text-primary">Retirement Readiness Score</span>
-                      <span className="text-accent-500">{retirementResult.readinessPercentage.toFixed(1)}%</span>
-                    </div>
-                    <div className="w-full h-4 bg-surface-hover rounded-full overflow-hidden border border-border">
-                      <div className="h-full bg-accent-500 rounded-full transition-all duration-500" style={{ width: `${retirementResult.readinessPercentage}%` }} />
-                    </div>
+                  <div className="p-4 rounded-xl bg-surface-hover border border-border">
+                    <p className="text-xs text-text-secondary font-medium mb-1">Inflation-Adjusted Monthly Expense</p>
+                    <p className="text-2xl font-bold text-accent-500">{formatCurrency(retirementResult.inflationAdjustedMonthlyExpense)}</p>
+                    <p className="text-[10px] text-text-muted mt-1">Expense value inflated by {inflationRate}% yearly.</p>
+                  </div>
+                  <div className="p-4 rounded-xl bg-surface-hover border border-border">
+                    <p className="text-xs text-text-secondary font-medium mb-1">Required Corpus (25 Yrs. Retirement)</p>
+                    <p className="text-2xl font-bold text-emerald-500">{formatCurrency(retirementResult.requiredRetirementCorpus)}</p>
+                    <p className="text-[10px] text-text-muted mt-1">Based on the 4% safe annual withdrawal rule.</p>
+                  </div>
+                  <div className="p-4 rounded-xl bg-surface-hover border border-border">
+                    <p className="text-xs text-text-secondary font-medium mb-1">Projected Net Worth at Age {retirementAge}</p>
+                    <p className="text-2xl font-bold text-indigo-500">{formatCurrency(retirementResult.projectedNetWorthAtRetirement)}</p>
+                    <p className="text-[10px] text-text-muted mt-1">Compounded return at {expectedReturnRate}% yearly.</p>
                   </div>
                 </div>
-              ) : (
-                <div className="p-12 text-center text-text-muted text-sm border border-dashed border-border rounded-xl">
-                  Adjust the parameters on the left and click <strong>Run Projection</strong> to view your inflation-adjusted retirement Readiness score.
+
+                {/* Readiness Progress Bar */}
+                <div className="p-4 rounded-xl bg-surface border border-border space-y-2">
+                  <div className="flex justify-between text-sm font-bold">
+                    <span className="text-text-primary">Retirement Readiness Score</span>
+                    <span className="text-accent-500">{retirementResult.readinessPercentage.toFixed(1)}%</span>
+                  </div>
+                  <div className="w-full h-4 bg-surface-hover rounded-full overflow-hidden border border-border">
+                    <div className="h-full bg-accent-500 rounded-full transition-all duration-500" style={{ width: `${retirementResult.readinessPercentage}%` }} />
+                  </div>
                 </div>
-              )}
+              </div>
             </div>
           </div>
         </div>
