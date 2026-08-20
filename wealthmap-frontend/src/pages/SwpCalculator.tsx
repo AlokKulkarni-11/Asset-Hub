@@ -128,8 +128,6 @@ export default function SwpCalculator() {
 
   // Removed activeParams state to enable direct reactive calculations
 
-  const [calculating, setCalculating] = useState(false);
-
   // Sync initial input with liquid net worth when link is active
   useEffect(() => {
     if (linkToLiquid && liquidNetWorth > 0) {
@@ -142,17 +140,6 @@ export default function SwpCalculator() {
     if (checked && liquidNetWorth > 0) {
       setInitialInvestmentInput(Math.round(liquidNetWorth).toString());
     }
-  };
-
-  // Handle Calculate Now trigger (runs visual loader since calculations update in real-time)
-  const handleCalculate = (e: React.FormEvent) => {
-    e.preventDefault();
-    setCalculating(true);
-    
-    // Simulate premium micro-calculation latency for UI feedback
-    setTimeout(() => {
-      setCalculating(false);
-    }, 300);
   };
 
   // Table view states
@@ -410,7 +397,7 @@ export default function SwpCalculator() {
       {/* Main Parameters & Output Summary Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* INPUT FORM (Left Column) */}
-        <form onSubmit={handleCalculate} className="glass-card p-6 space-y-4 h-fit">
+        <div className="glass-card p-6 space-y-4 h-fit">
           <h2 className="text-lg font-bold text-text-primary border-b border-border pb-2 flex items-center gap-1.5">
             Calculation Inputs
           </h2>
@@ -609,23 +596,8 @@ export default function SwpCalculator() {
               </p>
             </div>
 
-            {/* Calculate Button */}
-            <button 
-              type="submit" 
-              disabled={calculating}
-              className="btn-primary w-full text-sm font-bold flex items-center justify-center gap-2 mt-4 transition-all text-white shadow-md active:translate-y-0"
-            >
-              {calculating ? (
-                <>
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                  Calculating...
-                </>
-              ) : (
-                'Calculate Now'
-              )}
-            </button>
           </div>
-        </form>
+        </div>
 
         {/* RESULTS SUMMARY PANELS (Right Column stacked) */}
         <div className="lg:col-span-2 space-y-6">

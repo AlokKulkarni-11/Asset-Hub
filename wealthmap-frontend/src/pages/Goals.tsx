@@ -6,6 +6,7 @@ import type { GoalResponse } from '../api/goals.api';
 import { getEmergencyFund, saveEmergencyFund, calculateRetirement } from '../api/planning.api';
 import type { RetirementResponse } from '../api/planning.api';
 import { getAllAssets } from '../api/assets.api';
+import { getAllLiabilities } from '../api/liabilities.api';
 import { Target, Plus, ShieldCheck, Calculator, Trash2, Edit2, CheckCircle2, ChevronRight, AlertCircle, X, Loader2 } from 'lucide-react';
 import SwpCalculator from './SwpCalculator';
 
@@ -55,6 +56,15 @@ export default function Goals() {
     queryKey: ['assets', 'all'],
     queryFn: getAllAssets
   });
+
+  const { data: liabilities } = useQuery({
+    queryKey: ['liabilities', 'all'],
+    queryFn: getAllLiabilities
+  });
+
+  const totalAssets = assets?.reduce((sum, item) => sum + (item.currentValue || 0), 0) || 0;
+  const totalLiabilities = liabilities?.reduce((sum, item) => sum + (item.outstandingBalance || 0), 0) || 0;
+  const netWorth = totalAssets - totalLiabilities;
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('en-IN', {
@@ -146,14 +156,27 @@ export default function Goals() {
   return (
     <div className="space-y-6">
       
-      {/* Page Title & Navigation Tabs */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+      {/* Page Title & Hero Net Worth Header */}
+      <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 border-b border-border pb-4">
         <div>
           <h1 className="text-heading text-2xl font-dmsans">Goals & Financial Planning</h1>
           <p className="text-text-secondary text-sm">Target corpus tracking, emergency preparedness, and retirement readiness.</p>
         </div>
 
-        {/* Tab Controls */}
+        {/* Display Current Net Worth */}
+        <div className="glass-card px-4 py-2.5 flex items-center gap-3 border border-accent-100 bg-accent-500/5 min-w-[200px]">
+          <div className="p-2 bg-accent-500/10 rounded-xl text-accent-500 border border-accent-100">
+            <Target className="w-5 h-5" />
+          </div>
+          <div>
+            <p className="text-[10px] text-text-secondary uppercase tracking-wider font-bold">Current Net Worth</p>
+            <p className="text-xl font-extrabold text-accent-500">{formatCurrency(netWorth)}</p>
+          </div>
+        </div>
+      </div>
+
+      {/* Navigation Tab Controls */}
+      <div className="flex justify-start">
         <div className="flex flex-wrap gap-1 p-1 bg-surface-hover rounded-xl border border-border">
           <button 
             onClick={() => setActiveTab('goals')}
