@@ -37,6 +37,16 @@ public class AuthController {
     private final UserDetailsService userDetailsService;
     private final TfaService tfaService;
 
+    @org.springframework.beans.factory.annotation.Value("${google.client.id:}")
+    private String googleClientId;
+
+    @GetMapping("/google/client-id")
+    public ResponseEntity<?> getGoogleClientId() {
+        java.util.Map<String, String> res = new java.util.HashMap<>();
+        res.put("clientId", googleClientId != null ? googleClientId : "");
+        return ResponseEntity.ok(res);
+    }
+
     @PostMapping("/register")
     public ResponseEntity<?> register(@Valid @RequestBody RegisterRequest request) {
         if (userRepository.existsByEmail(request.getEmail())) {

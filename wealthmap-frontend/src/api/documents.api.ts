@@ -70,6 +70,14 @@ export const documentsApi = {
     const res = await api.get('/auth/google/status');
     return res.data;
   },
+  getGoogleClientId: async (): Promise<string> => {
+    try {
+      const res = await api.get('/auth/google/client-id');
+      return res.data?.clientId || (import.meta as any).env.VITE_GOOGLE_CLIENT_ID || '';
+    } catch {
+      return (import.meta as any).env.VITE_GOOGLE_CLIENT_ID || '';
+    }
+  },
   linkGoogle: async (code: string, redirectUri: string) => {
     const res = await api.post('/auth/google/link', { code, authCode: code, redirectUri });
     return res.data;

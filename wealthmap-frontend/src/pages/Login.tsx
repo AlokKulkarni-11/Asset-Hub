@@ -57,22 +57,33 @@ export default function Login() {
     }
   }, [login, navigate]);
 
-  const handleGoogleLogin = () => {
-    const clientId = (import.meta as any).env.VITE_GOOGLE_CLIENT_ID || '';
-    if (!clientId) {
-      setError('Google Sign-In is configured on the backend. Please provide Google Client ID in frontend env.');
-      return;
+  const handleGoogleLogin = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      let clientId = (import.meta as any).env.VITE_GOOGLE_CLIENT_ID || '';
+      if (!clientId) {
+        clientId = await documentsApi.getGoogleClientId();
+      }
+      if (!clientId) {
+        setError('Google Sign-In is not configured. Please supply GOOGLE_CLIENT_ID on the backend.');
+        setLoading(false);
+        return;
+      }
+      const redirectUri = `${window.location.origin}/login`;
+      const params = new URLSearchParams({
+        client_id: clientId.trim(),
+        redirect_uri: redirectUri,
+        response_type: 'code',
+        scope: 'openid email profile https://www.googleapis.com/auth/drive.file',
+        access_type: 'offline',
+        prompt: 'consent'
+      });
+      window.location.href = `https://accounts.google.com/o/oauth2/v2/auth?${params.toString()}`;
+    } catch (err: any) {
+      setError('Failed to initialize Google login.');
+      setLoading(false);
     }
-    const redirectUri = `${window.location.origin}/login`;
-    const params = new URLSearchParams({
-      client_id: clientId.trim(),
-      redirect_uri: redirectUri,
-      response_type: 'code',
-      scope: 'openid email profile https://www.googleapis.com/auth/drive.file',
-      access_type: 'offline',
-      prompt: 'consent'
-    });
-    window.location.href = `https://accounts.google.com/o/oauth2/v2/auth?${params.toString()}`;
   };
 
   const onSubmit = async (data: LoginForm) => {
