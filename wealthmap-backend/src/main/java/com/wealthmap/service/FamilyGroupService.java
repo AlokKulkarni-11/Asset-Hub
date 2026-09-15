@@ -49,6 +49,7 @@ public class FamilyGroupService {
         FamilyGroup savedGroup = familyGroupRepository.save(group);
         
         creator.setFamilyGroup(savedGroup);
+        creator.setFamilyRole(com.wealthmap.enums.FamilyRole.OWNER);
         userRepository.save(creator);
         
         return savedGroup;
@@ -126,6 +127,7 @@ public class FamilyGroupService {
 
         FamilyGroup group = invite.getFamilyGroup();
         user.setFamilyGroup(group);
+        user.setFamilyRole(com.wealthmap.enums.FamilyRole.EDITOR);
         userRepository.save(user);
 
         invite.setStatus("ACCEPTED");
@@ -148,6 +150,7 @@ public class FamilyGroupService {
         }
 
         user.setFamilyGroup(null);
+        user.setFamilyRole(null);
         userRepository.save(user);
     }
 }

@@ -12,6 +12,7 @@ import Maturities from './pages/Maturities';
 import Profile from './pages/Profile';
 import Liabilities from './pages/Liabilities';
 import Goals from './pages/Goals';
+import { AiAssistantPage } from './pages/AiAssistantPage';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -23,6 +24,34 @@ const queryClient = new QueryClient({
 });
 
 import { ErrorBoundary } from './components/ErrorBoundary';
+import PrivacyPolicy from './pages/PrivacyPolicy';
+import NotFound from './pages/NotFound';
+import { usePageMeta } from './hooks/usePageMeta';
+
+function AppContent() {
+  usePageMeta();
+
+  return (
+    <Routes>
+      <Route path="/login" element={<Login />} />
+      <Route path="/register" element={<Register />} />
+      <Route path="/privacy" element={<PrivacyPolicy />} />
+      
+      <Route element={<AppLayout />}>
+        <Route path="/" element={<Dashboard />} />
+        <Route path="/assets" element={<Assets />} />
+        <Route path="/liabilities" element={<Liabilities />} />
+        <Route path="/goals" element={<Goals />} />
+        <Route path="/assistant" element={<AiAssistantPage />} />
+        <Route path="/family" element={<Family />} />
+        <Route path="/maturities" element={<Maturities />} />
+        <Route path="/profile" element={<Profile />} />
+      </Route>
+
+      <Route path="*" element={<NotFound />} />
+    </Routes>
+  );
+}
 
 function App() {
   return (
@@ -30,22 +59,7 @@ function App() {
       <QueryClientProvider client={queryClient}>
         <ErrorBoundary>
           <BrowserRouter>
-            <Routes>
-              <Route path="/login" element={<Login />} />
-              <Route path="/register" element={<Register />} />
-              
-              <Route element={<AppLayout />}>
-                <Route path="/" element={<Dashboard />} />
-                <Route path="/assets" element={<Assets />} />
-                <Route path="/liabilities" element={<Liabilities />} />
-                <Route path="/goals" element={<Goals />} />
-                <Route path="/family" element={<Family />} />
-                <Route path="/maturities" element={<Maturities />} />
-                <Route path="/profile" element={<Profile />} />
-              </Route>
-
-              <Route path="*" element={<Navigate to="/" replace />} />
-            </Routes>
+            <AppContent />
           </BrowserRouter>
         </ErrorBoundary>
       </QueryClientProvider>

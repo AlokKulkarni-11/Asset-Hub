@@ -6,14 +6,18 @@ import { z } from 'zod';
 import { X, Loader2 } from 'lucide-react';
 import { addGoldAsset, updateGoldAsset, getGoldAsset } from '../../api/assets.api';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
+import CurrencySelect from '../ui/CurrencySelect';
 
 const addGoldSchema = z.object({
   name: z.string().min(1, 'Name is required'),
+  currency: z.string().default('INR'),
   purchaseDate: z.string().min(1, 'Purchase date is required'),
   notes: z.string().optional(),
   weightGrams: z.coerce.number().min(0.1, 'Weight must be > 0'),
   purity: z.enum(['K18', 'K20', 'K22', 'K24']),
   purchasePrice: z.coerce.number().min(1, 'Purchase price must be > 0'),
+  nomineeName: z.string().optional(),
+  nomineeRelationship: z.string().optional(),
 });
 
 type AddGoldFormInputs = z.infer<typeof addGoldSchema>;
@@ -24,12 +28,15 @@ interface Props {
 }
 
 export default function AddGoldForm({ onClose, initialData }: Props) {
-  const { register, handleSubmit, reset, formState: { errors } } = useForm<any>({
+  const { register, handleSubmit, reset, setValue, watch, formState: { errors } } = useForm<any>({
     resolver: zodResolver(addGoldSchema),
     defaultValues: {
+      currency: 'INR',
       purity: 'K24',
     }
   });
+
+  const selectedCurrency = watch('currency') || 'INR';
 
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -48,13 +55,22 @@ export default function AddGoldForm({ onClose, initialData }: Props) {
         }
       }
 
+      const rawPurity = initialData.purity || 'K24';
+      const purity = (rawPurity === '24K' || rawPurity === 'K24') ? 'K24' :
+                     (rawPurity === '22K' || rawPurity === 'K22') ? 'K22' :
+                     (rawPurity === '20K' || rawPurity === 'K20') ? 'K20' :
+                     (rawPurity === '18K' || rawPurity === 'K18') ? 'K18' : 'K24';
+
       reset({
-        name: initialData.name,
-        purchaseDate: formattedDate,
+        name: initialData.name || 'Physical Gold',
+        currency: initialData.currency || 'INR',
+        purchaseDate: formattedDate || new Date().toISOString().split('T')[0],
         notes: initialData.notes || '',
-        weightGrams: initialData.weightInGrams || initialData.weight,
-        purity: initialData.purity,
-        purchasePrice: initialData.purchasePrice,
+        weightGrams: initialData.weightGrams || initialData.weightInGrams || initialData.weight || initialData.quantity || 10,
+        purity: purity,
+        purchasePrice: initialData.purchasePrice || initialData.originalInvestedAmount || initialData.investedAmount || initialData.currentValue || 0,
+        nomineeName: initialData.nomineeName || '',
+        nomineeRelationship: initialData.nomineeRelationship || '',
       });
     }
   }, [initialData, reset]);
@@ -88,8 +104,8 @@ export default function AddGoldForm({ onClose, initialData }: Props) {
   };
 
   return (
-    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 pb-20 md:pb-4">
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 relative border-2 border-sky-500 overflow-y-auto max-h-[70vh] md:max-h-[85vh]">
+    <div className="fixed inset-0 bg-slate-900/60 z-50 flex items-center justify-center p-4 pb-20 md:pb-4">
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 relative border border-slate-200 overflow-y-auto max-h-[70vh] md:max-h-[85vh]">
         <button onClick={onClose} className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition-colors">
           <X className="w-5 h-5" />
         </button>
@@ -131,7 +147,15 @@ export default function AddGoldForm({ onClose, initialData }: Props) {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Purchase Price (Total ₹)</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Currency</label>
+                <CurrencySelect
+                  value={selectedCurrency}
+                  onChange={(c) => setValue('currency', c, { shouldValidate: true })}
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Purchase Price (Total {selectedCurrency})</label>
                 <input {...register('purchasePrice')} type="number" className="glass-input" />
                 {errors.purchasePrice && <p className="text-red-600 font-medium text-xs mt-1 bg-red-50 border border-red-200 rounded px-2 py-1">{errors.purchasePrice.message}</p>}
               </div>
@@ -140,6 +164,29 @@ export default function AddGoldForm({ onClose, initialData }: Props) {
                 <label className="block text-sm font-medium text-gray-700 mb-1">Purchase Date</label>
                 <input {...register('purchaseDate')} type="date" className="glass-input" />
                 {errors.purchaseDate && <p className="text-red-600 font-medium text-xs mt-1 bg-red-50 border border-red-200 rounded px-2 py-1">{errors.purchaseDate.message}</p>}
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Notes (Optional)</label>
+                <textarea {...register('notes')} className="glass-input resize-none" rows={2}></textarea>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4 border-t border-gray-100 pt-3">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Nominee Name</label>
+                  <input {...register('nomineeName')} type="text" placeholder="Optional" className="glass-input" />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Relationship</label>
+                  <select {...register('nomineeRelationship')} className="glass-input">
+                    <option value="">None / Select</option>
+                    <option value="Spouse">Spouse</option>
+                    <option value="Child">Child</option>
+                    <option value="Parent">Parent</option>
+                    <option value="Sibling">Sibling</option>
+                    <option value="Other">Other</option>
+                  </select>
+                </div>
               </div>
 
               <button type="submit" disabled={loading} className="btn-primary w-full mt-4">

@@ -53,6 +53,22 @@ public class JwtUtil {
         return createToken(claims, userDetails.getUsername());
     }
 
+    public String generateTfaPendingToken(UserDetails userDetails) {
+        Map<String, Object> claims = new HashMap<>();
+        claims.put("is2faPending", true);
+        return createToken(claims, userDetails.getUsername());
+    }
+
+    public Boolean is2faPending(String token) {
+        try {
+            Claims claims = extractAllClaims(token);
+            Boolean pending = claims.get("is2faPending", Boolean.class);
+            return pending != null && pending;
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
     private String createToken(Map<String, Object> claims, String subject) {
         return Jwts.builder()
                 .claims(claims)

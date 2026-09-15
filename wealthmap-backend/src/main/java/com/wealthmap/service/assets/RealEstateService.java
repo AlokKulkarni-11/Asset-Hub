@@ -24,6 +24,7 @@ public class RealEstateService {
     private final AssetRepository assetRepository;
     private final UserRepository userRepository;
     private final PriceProviderFactory priceProviderFactory;
+    private final com.wealthmap.service.CurrencyConversionService currencyConversionService;
 
     public AssetResponse addRealEstate(RealEstateRequest request, String userEmail) {
         User user = userRepository.findByEmail(userEmail)
@@ -36,6 +37,9 @@ public class RealEstateService {
         re.setAssetType(AssetType.REAL_ESTATE);
         re.setPurchaseDate(request.getPurchaseDate());
         re.setNotes(request.getNotes());
+        re.setNomineeName(request.getNomineeName());
+        re.setNomineeRelationship(request.getNomineeRelationship());
+        re.setCurrency(request.getCurrency() != null && !request.getCurrency().trim().isEmpty() ? request.getCurrency().toUpperCase() : "INR");
         
         re.setPropertyName(request.getPropertyName());
         re.setPropertyType(request.getPropertyType());
@@ -69,6 +73,9 @@ public class RealEstateService {
         re.setName(request.getPropertyName());
         re.setPurchaseDate(request.getPurchaseDate());
         re.setNotes(request.getNotes());
+        re.setNomineeName(request.getNomineeName());
+        re.setNomineeRelationship(request.getNomineeRelationship());
+        re.setCurrency(request.getCurrency() != null && !request.getCurrency().trim().isEmpty() ? request.getCurrency().toUpperCase() : "INR");
         
         re.setPropertyName(request.getPropertyName());
         re.setPropertyType(request.getPropertyType());
@@ -97,24 +104,40 @@ public class RealEstateService {
         response.setAssetType(item.getAssetType());
         response.setPurchaseDate(item.getPurchaseDate());
         response.setNotes(item.getNotes());
+        response.setNomineeName(item.getNomineeName());
+        response.setNomineeRelationship(item.getNomineeRelationship());
         response.setFamilyMemberId(item.getUser().getId());
         response.setFamilyMemberName(item.getUser().getName());
-        response.setInvestedAmount(item.getInvestedAmount());
+
+        String currency = item.getCurrency() != null ? item.getCurrency().toUpperCase() : "INR";
+        response.setCurrency(currency);
+
+        BigDecimal originalInvested = item.getInvestedAmount();
+        response.setOriginalInvestedAmount(originalInvested);
 
         response.setPropertyName(item.getPropertyName());
         response.setPropertyType(item.getPropertyType());
         response.setPurchasePrice(item.getPurchasePrice());
         response.setEstimatedCurrentValue(item.getEstimatedCurrentValue());
 
-        BigDecimal currentValue = priceProviderFactory.getProvider(AssetType.REAL_ESTATE).getCurrentPrice(item);
-        response.setCurrentValue(currentValue);
+        BigDecimal originalCurrentValue = priceProviderFactory.getProvider(AssetType.REAL_ESTATE).getCurrentPrice(item);
+        response.setOriginalCurrentValue(originalCurrentValue);
 
-        BigDecimal gainLoss = currentValue.subtract(item.getInvestedAmount());
+        BigDecimal exchangeRate = currencyConversionService.getExchangeRate(currency, "INR");
+        response.setExchangeRate(exchangeRate);
+
+        BigDecimal convertedInvested = originalInvested.multiply(exchangeRate).setScale(2, RoundingMode.HALF_UP);
+        BigDecimal convertedCurrentValue = originalCurrentValue.multiply(exchangeRate).setScale(2, RoundingMode.HALF_UP);
+
+        response.setInvestedAmount(convertedInvested);
+        response.setCurrentValue(convertedCurrentValue);
+
+        BigDecimal gainLoss = convertedCurrentValue.subtract(convertedInvested);
         response.setGainLoss(gainLoss);
 
         BigDecimal gainPercent = BigDecimal.ZERO;
-        if (item.getInvestedAmount().compareTo(BigDecimal.ZERO) > 0) {
-            gainPercent = gainLoss.divide(item.getInvestedAmount(), 4, RoundingMode.HALF_UP)
+        if (convertedInvested.compareTo(BigDecimal.ZERO) > 0) {
+            gainPercent = gainLoss.divide(convertedInvested, 4, RoundingMode.HALF_UP)
                     .multiply(BigDecimal.valueOf(100));
         }
         response.setGainPercent(gainPercent);

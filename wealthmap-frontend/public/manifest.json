@@ -1,0 +1,30 @@
+{
+  "name": "Asset Hub — Premium Wealth & Portfolio Tracker",
+  "short_name": "AssetHub",
+  "description": "Unified net worth, fixed income bonds, equity vesting, goal planning, and portfolio intelligence.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#0B0F19",
+  "theme_color": "#0B0F19",
+  "categories": [
+    "finance",
+    "productivity",
+    "utilities"
+  ],
+  "icons": [
+    {
+      "src": "/AssetHub_Logo.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/AssetHub.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

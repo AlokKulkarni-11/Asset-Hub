@@ -28,6 +28,8 @@ public class AnalyticsService {
     private final MutualFundService mfService;
     private final RealEstateService reService;
     private final CryptoService cryptoService;
+    private final BondService bondService;
+    private final EsopRsuService esopRsuService;
     private final LiabilityService liabilityService;
 
     public List<AssetResponse> getAllAssetsForUser(String userEmail) {
@@ -38,6 +40,8 @@ public class AnalyticsService {
         allAssets.addAll(mfService.getAllMutualFundsForUser(userEmail));
         allAssets.addAll(reService.getAllRealEstateForUser(userEmail));
         allAssets.addAll(cryptoService.getAllCryptoForUser(userEmail));
+        allAssets.addAll(bondService.getAllBondsForUser(userEmail));
+        allAssets.addAll(esopRsuService.getAllEsopRsusForUser(userEmail));
         return allAssets;
     }
 

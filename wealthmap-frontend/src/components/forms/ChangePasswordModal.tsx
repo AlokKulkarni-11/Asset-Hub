@@ -50,9 +50,9 @@ export default function ChangePasswordModal({ onClose }: Props) {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-navy-950/80 backdrop-blur-sm">
-      <div className="bg-surface rounded-2xl w-full max-w-md overflow-hidden shadow-2xl border border-border animate-in zoom-in-95 duration-200">
-        <div className="flex justify-between items-center p-6 border-b border-border bg-surface-hover">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60">
+      <div className="bg-white rounded-2xl w-full max-w-md overflow-hidden shadow-2xl border border-slate-200 animate-in zoom-in-95 duration-200">
+        <div className="flex justify-between items-center p-6 border-b border-slate-200 bg-slate-50">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-full bg-accent-500/20 flex items-center justify-center">
               <Shield className="w-5 h-5 text-accent-500" />

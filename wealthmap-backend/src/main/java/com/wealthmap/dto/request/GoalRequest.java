@@ -12,4 +12,5 @@ public class GoalRequest {
     private LocalDate targetDate;
     private String notes;
     private List<Long> taggedAssetIds;
+    private boolean shared;
 }

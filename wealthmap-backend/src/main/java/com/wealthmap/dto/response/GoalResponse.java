@@ -15,4 +15,6 @@ public class GoalResponse {
     private List<Long> taggedAssetIds;
     private BigDecimal currentSavedAmount;
     private double progressPercentage;
+    private boolean shared;
+    private Long familyGroupId;
 }

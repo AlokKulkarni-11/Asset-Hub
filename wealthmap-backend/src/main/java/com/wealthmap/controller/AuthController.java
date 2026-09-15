@@ -16,10 +16,14 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.security.core.Authentication;
+import com.wealthmap.service.TfaService;
+import lombok.Data;
 
 @RestController
 @RequestMapping("/api/auth")
@@ -31,6 +35,7 @@ public class AuthController {
     private final JwtUtil jwtUtil;
     private final AuthenticationManager authenticationManager;
     private final UserDetailsService userDetailsService;
+    private final TfaService tfaService;
 
     @PostMapping("/register")
     public ResponseEntity<?> register(@Valid @RequestBody RegisterRequest request) {
@@ -60,6 +65,17 @@ public class AuthController {
         User user = userRepository.findByEmail(request.getEmail())
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
+        if (user.isTfaEnabled()) {
+            UserDetails userDetails = userDetailsService.loadUserByUsername(user.getEmail());
+            String tfaToken = jwtUtil.generateTfaPendingToken(userDetails);
+            
+            AuthResponse response = new AuthResponse();
+            response.setTfaRequired(true);
+            response.setTfaToken(tfaToken);
+            response.setEmail(user.getEmail());
+            return ResponseEntity.ok(response);
+        }
+
         UserDetails userDetails = userDetailsService.loadUserByUsername(user.getEmail());
         String token = jwtUtil.generateToken(userDetails);
 
@@ -88,4 +104,198 @@ public class AuthController {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
+
+    @PostMapping("/tfa/setup")
+    public ResponseEntity<?> setupTfa(Authentication authentication) {
+        if (authentication == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Unauthorized");
+        }
+        User user = userRepository.findByEmail(authentication.getName()).orElseThrow();
+        String secret = tfaService.generateSecret();
+        user.setTfaSecret(secret);
+        userRepository.save(user);
+
+        String qrCodeUri = tfaService.getQrCodeUri(secret, user.getEmail());
+        
+        java.util.Map<String, String> response = new java.util.HashMap<>();
+        response.put("secret", secret);
+        response.put("qrCodeUri", qrCodeUri);
+        return ResponseEntity.ok(response);
+    }
+
+    @PostMapping("/tfa/enable")
+    public ResponseEntity<?> enableTfa(Authentication authentication, @RequestBody TfaVerifyRequest req) {
+        if (authentication == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Unauthorized");
+        }
+        User user = userRepository.findByEmail(authentication.getName()).orElseThrow();
+        if (user.getTfaSecret() == null) {
+            return ResponseEntity.badRequest().body("TFA is not set up yet. Run setup first.");
+        }
+        
+        boolean verified = tfaService.verifyCode(user.getTfaSecret(), req.getCode());
+        if (!verified) {
+            return ResponseEntity.badRequest().body("Invalid verification code.");
+        }
+        
+        user.setTfaEnabled(true);
+        java.util.List<String> recoveryCodes = tfaService.generateRecoveryCodes();
+        user.setTfaRecoveryCodes(recoveryCodes);
+        userRepository.save(user);
+        
+        java.util.Map<String, Object> response = new java.util.HashMap<>();
+        response.put("success", true);
+        response.put("recoveryCodes", recoveryCodes);
+        return ResponseEntity.ok(response);
+    }
+
+    @PostMapping("/tfa/disable")
+    public ResponseEntity<?> disableTfa(Authentication authentication, @RequestBody TfaVerifyRequest req) {
+        if (authentication == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Unauthorized");
+        }
+        User user = userRepository.findByEmail(authentication.getName()).orElseThrow();
+        
+        boolean verified = tfaService.verifyCode(user.getTfaSecret(), req.getCode());
+        if (!verified) {
+            return ResponseEntity.badRequest().body("Invalid verification code.");
+        }
+        
+        user.setTfaEnabled(false);
+        user.setTfaSecret(null);
+        user.getTfaRecoveryCodes().clear();
+        userRepository.save(user);
+        
+        return ResponseEntity.ok("Two-factor authentication has been disabled.");
+    }
+
+    @PostMapping("/verify-totp")
+    public ResponseEntity<?> verifyTotp(@RequestBody VerifyTotpRequest req) {
+        String token = req.getTfaToken();
+        if (token == null || !jwtUtil.is2faPending(token)) {
+            return ResponseEntity.badRequest().body("Invalid or expired 2FA transaction token.");
+        }
+        
+        String email = jwtUtil.extractUsername(token);
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        boolean verified = false;
+        if (user.getTfaRecoveryCodes().contains(req.getCode().toUpperCase())) {
+            user.getTfaRecoveryCodes().remove(req.getCode().toUpperCase());
+            userRepository.save(user);
+            verified = true;
+        } else {
+            verified = tfaService.verifyCode(user.getTfaSecret(), req.getCode());
+        }
+        
+        if (!verified) {
+            return ResponseEntity.badRequest().body("Invalid verification code.");
+        }
+        
+        UserDetails userDetails = userDetailsService.loadUserByUsername(user.getEmail());
+        String finalToken = jwtUtil.generateToken(userDetails);
+        
+        return ResponseEntity.ok(new AuthResponse(finalToken, user.getId(), user.getEmail(), user.getName(), user.getMobileNumber()));
+    }
+
+    @Autowired
+    private com.wealthmap.service.GoogleDriveService googleDriveService;
+
+    @PostMapping("/google")
+    public ResponseEntity<?> googleAuth(@RequestBody com.wealthmap.dto.request.GoogleOAuthRequest req) {
+        if (req.getCode() == null || req.getCode().trim().isEmpty()) {
+            return ResponseEntity.badRequest().body("Authorization code is required");
+        }
+
+        java.util.Map<String, Object> tokenInfo = googleDriveService.exchangeAuthCode(req.getCode(), req.getRedirectUri());
+        String email = (String) tokenInfo.get("email");
+        if (email == null) {
+            return ResponseEntity.badRequest().body("Failed to retrieve profile from Google");
+        }
+
+        String name = (String) tokenInfo.get("name");
+        String accessToken = (String) tokenInfo.get("accessToken");
+        String refreshToken = (String) tokenInfo.get("refreshToken");
+        int expiresIn = tokenInfo.get("expiresIn") != null ? (Integer) tokenInfo.get("expiresIn") : 3600;
+
+        User user = userRepository.findByEmail(email).orElseGet(() -> {
+            User newUser = new User();
+            newUser.setEmail(email);
+            newUser.setName(name != null && !name.trim().isEmpty() ? name : email.split("@")[0]);
+            newUser.setPassword(passwordEncoder.encode(java.util.UUID.randomUUID().toString()));
+            return newUser;
+        });
+
+        user.setGoogleEmail(email);
+        user.setGoogleAccessToken(accessToken);
+        if (refreshToken != null) {
+            user.setGoogleRefreshToken(refreshToken);
+        }
+        user.setGoogleTokenExpiresAt(java.time.LocalDateTime.now().plusSeconds(expiresIn));
+        userRepository.save(user);
+
+        UserDetails userDetails = userDetailsService.loadUserByUsername(user.getEmail());
+        String token = jwtUtil.generateToken(userDetails);
+
+        return ResponseEntity.ok(new AuthResponse(token, user.getId(), user.getEmail(), user.getName(), user.getMobileNumber()));
+    }
+
+    @PostMapping("/google/link")
+    public ResponseEntity<?> linkGoogleDrive(Authentication authentication, @RequestBody com.wealthmap.dto.request.GoogleOAuthRequest req) {
+        if (authentication == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Unauthorized");
+        }
+
+        User user = userRepository.findByEmail(authentication.getName()).orElseThrow();
+        if (req.getCode() == null || req.getCode().trim().isEmpty()) {
+            return ResponseEntity.badRequest().body("Authorization code is required");
+        }
+
+        java.util.Map<String, Object> tokenInfo = googleDriveService.exchangeAuthCode(req.getCode(), req.getRedirectUri());
+        String email = (String) tokenInfo.get("email");
+        String accessToken = (String) tokenInfo.get("accessToken");
+        String refreshToken = (String) tokenInfo.get("refreshToken");
+        int expiresIn = tokenInfo.get("expiresIn") != null ? (Integer) tokenInfo.get("expiresIn") : 3600;
+
+        if (accessToken == null) {
+            return ResponseEntity.badRequest().body("Failed to obtain Google tokens");
+        }
+
+        user.setGoogleEmail(email != null ? email : user.getEmail());
+        user.setGoogleAccessToken(accessToken);
+        if (refreshToken != null) {
+            user.setGoogleRefreshToken(refreshToken);
+        }
+        user.setGoogleTokenExpiresAt(java.time.LocalDateTime.now().plusSeconds(expiresIn));
+        userRepository.save(user);
+
+        java.util.Map<String, Object> res = new java.util.HashMap<>();
+        res.put("success", true);
+        res.put("googleEmail", user.getGoogleEmail());
+        return ResponseEntity.ok(res);
+    }
+
+    @GetMapping("/google/status")
+    public ResponseEntity<?> getGoogleStatus(Authentication authentication) {
+        if (authentication == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Unauthorized");
+        }
+        User user = userRepository.findByEmail(authentication.getName()).orElseThrow();
+        java.util.Map<String, Object> res = new java.util.HashMap<>();
+        res.put("isLinked", user.isGoogleDriveConnected());
+        res.put("googleEmail", user.getGoogleEmail());
+        return ResponseEntity.ok(res);
+    }
+}
+
+@Data
+class TfaVerifyRequest {
+    private String code;
+}
+
+@Data
+class VerifyTotpRequest {
+    private String code;
+    private String tfaToken;
 }

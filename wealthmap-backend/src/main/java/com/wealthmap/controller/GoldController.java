@@ -18,6 +18,7 @@ import java.util.List;
 public class GoldController {
 
     private final GoldService goldService;
+    private final com.wealthmap.service.AuditLogService auditLogService;
 
     @PostMapping
     public ResponseEntity<AssetResponse> addGold(
@@ -26,6 +27,7 @@ public class GoldController {
         
         String userEmail = authentication.getName();
         AssetResponse response = goldService.addGold(request, userEmail);
+        auditLogService.log(userEmail, "ADD_ASSET", "GOLD", response.getId(), "Added gold: " + request.getWeightGrams() + "g");
         return ResponseEntity.ok(response);
     }
 
@@ -50,6 +52,7 @@ public class GoldController {
             Authentication authentication) {
         String userEmail = authentication.getName();
         GoldResponse response = goldService.updateGold(id, request, userEmail);
+        auditLogService.log(userEmail, "UPDATE_ASSET", "GOLD", response.getId(), "Updated gold weight to " + request.getWeightGrams() + "g");
         return ResponseEntity.ok(response);
     }
 }

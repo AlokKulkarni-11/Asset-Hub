@@ -1,9 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { Plus, Coins, Landmark, TrendingUp, MoreVertical, Edit2, Trash2, ChevronDown, ChevronUp, Briefcase, Building2 } from 'lucide-react';
+import { Plus, Coins, Landmark, TrendingUp, MoreVertical, Edit2, Trash2, ChevronDown, ChevronUp, Briefcase, Building2, Download, HardDrive, Sparkles, ScrollText } from 'lucide-react';
 import { getAllAssets, deleteAsset } from '../api/assets.api';
 import type { AssetResponse } from '../api/assets.api';
 import { getAnalyticsSummary } from '../api/analytics.api';
+import { getMyFamily } from '../api/family.api';
 import AssetSelectorModal from '../components/forms/AssetSelectorModal';
 import AddGoldForm from '../components/forms/AddGoldForm';
 import AddFDForm from '../components/forms/AddFDForm';
@@ -11,19 +13,50 @@ import AddStockForm from '../components/forms/AddStockForm';
 import AddMutualFundForm from '../components/forms/AddMutualFundForm';
 import AddRealEstateForm from '../components/forms/AddRealEstateForm';
 import AddCryptoForm from '../components/forms/AddCryptoForm';
+import AddBondForm from '../components/forms/AddBondForm';
+import AddEsopRsuForm from '../components/forms/AddEsopRsuForm';
 import ConfirmDialog from '../components/ui/ConfirmDialog';
+import ExportModal from '../components/forms/ExportModal';
+import { DocumentVaultModal } from '../components/documents/DocumentVaultModal';
 
 export default function Assets() {
+  const location = useLocation();
+  const navigate = useNavigate();
+
   const [showGoldModal, setShowGoldModal] = useState(false);
+  const [isExportOpen, setIsExportOpen] = useState(false);
   const [menuOpenId, setMenuOpenId] = useState<number | null>(null);
   const [editingAsset, setEditingAsset] = useState<AssetResponse | null>(null);
   const [assetToDelete, setAssetToDelete] = useState<number | null>(null);
+  const [selectedAssetForDocs, setSelectedAssetForDocs] = useState<{ id?: number; name?: string; type?: string } | null>(null);
+  const [isVaultOpen, setIsVaultOpen] = useState(false);
   
   // 3-Level Accordion State
   const [expandedCategory, setExpandedCategory] = useState<string | null>(null);
   const [expandedSubGroup, setExpandedSubGroup] = useState<string | null>(null);
   
   const queryClient = useQueryClient();
+
+  useEffect(() => {
+    if (location.state?.parsedAsset) {
+      const parsed = location.state.parsedAsset;
+      const type = (parsed.assetType || '').toUpperCase();
+      const fields = parsed.fields || {};
+      setEditingAsset({
+        ...parsed,
+        ...fields,
+        assetType: type,
+        investedAmount: fields.purchasePrice || fields.principalAmount || fields.investedAmount || parsed.purchasePrice || 0,
+        currentValue: fields.estimatedCurrentValue || fields.currentValue || fields.purchasePrice || parsed.currentValue || parsed.purchasePrice || 0,
+      } as unknown as AssetResponse);
+      navigate(location.pathname, { replace: true, state: {} });
+    }
+  }, [location.state, navigate, location.pathname]);
+
+  const { data: family } = useQuery({
+    queryKey: ['family', 'me'],
+    queryFn: getMyFamily,
+  });
 
   const { data: allAssets, isLoading } = useQuery({
     queryKey: ['assets', 'all'],
@@ -54,6 +87,8 @@ export default function Assets() {
     if (asset.assetType === 'MUTUAL_FUND') return asset.schemeName || 'Other Mutual Funds';
     if (asset.assetType === 'REAL_ESTATE') return asset.propertyType || 'Other Real Estate';
     if (asset.assetType === 'CRYPTOCURRENCY') return asset.symbol ? asset.symbol.toUpperCase() : 'Other Cryptos';
+    if (asset.assetType === 'BOND') return asset.bondType ? asset.bondType.replace(/_/g, ' ') : (asset.issuer || 'Other Bonds');
+    if (asset.assetType === 'ESOP_RSU') return asset.companyName || (asset.planType || 'Other Equity Grants');
     return 'Other';
   };
 
@@ -89,6 +124,8 @@ export default function Assets() {
 
   const getCategoryIcon = (type: string) => {
     if (type === 'FIXED_DEPOSIT') return <Landmark className="w-8 h-8 text-accent-500" />;
+    if (type === 'BOND') return <ScrollText className="w-8 h-8 text-accent-500" />;
+    if (type === 'ESOP_RSU') return <Sparkles className="w-8 h-8 text-indigo-400" />;
     if (type === 'STOCK') return <TrendingUp className="w-8 h-8 text-accent-500" />;
     if (type === 'MUTUAL_FUND') return <Briefcase className="w-8 h-8 text-accent-500" />;
     if (type === 'REAL_ESTATE') return <Building2 className="w-8 h-8 text-accent-500" />;
@@ -103,6 +140,27 @@ export default function Assets() {
     }).format(value || 0);
   };
 
+  const getCurrencySymbol = (currency?: string) => {
+    switch (currency) {
+      case 'USD': return '$';
+      case 'EUR': return '€';
+      case 'GBP': return '£';
+      case 'AED': return 'AED ';
+      case 'SGD': return 'S$';
+      case 'CAD': return 'CA$';
+      case 'AUD': return 'A$';
+      case 'JPY': return '¥';
+      case 'CHF': return 'CHF ';
+      default: return '₹';
+    }
+  };
+
+  const formatOriginalCurrency = (value?: number, currency?: string) => {
+    if (value === undefined || value === null) return '';
+    const sym = getCurrencySymbol(currency);
+    return `${sym}${Number(value).toLocaleString('en-US', { maximumFractionDigits: 2 })}`;
+  };
+
   const handleCategoryClick = (category: string) => {
     if (expandedCategory === category) {
       setExpandedCategory(null);
@@ -115,15 +173,36 @@ export default function Assets() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-heading">Your Assets</h1>
-        <button 
-          onClick={() => setShowGoldModal(true)}
-          className="btn-primary"
-        >
-          <Plus className="w-5 h-5" />
-          Add Asset
-        </button>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-heading">Your Assets</h1>
+          <p className="text-text-secondary text-xs mt-0.5">Track and manage your diverse portfolio of holdings</p>
+        </div>
+        <div className="flex items-center gap-2">
+          <button 
+            onClick={() => setIsVaultOpen(true)}
+            className="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-surface border border-border hover:bg-surface-hover text-indigo-600 hover:text-indigo-700 text-sm font-medium transition-all shadow-sm"
+          >
+            <HardDrive className="w-4 h-4" />
+            Document Vault
+          </button>
+          <button 
+            onClick={() => setIsExportOpen(true)}
+            className="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-surface border border-border hover:bg-surface-hover text-text-secondary hover:text-text-primary text-sm font-medium transition-all shadow-sm"
+          >
+            <Download className="w-4 h-4 text-sky-500" />
+            Export
+          </button>
+          {family?.currentUserRole !== 'VIEWER' && (
+            <button 
+              onClick={() => setShowGoldModal(true)}
+              className="btn-primary"
+            >
+              <Plus className="w-5 h-5" />
+              Add Asset
+            </button>
+          )}
+        </div>
       </div>
 
       {showGoldModal && (
@@ -135,6 +214,12 @@ export default function Assets() {
       )}
       {editingAsset?.assetType === 'FIXED_DEPOSIT' && (
         <AddFDForm initialData={editingAsset} onClose={() => setEditingAsset(null)} />
+      )}
+      {editingAsset?.assetType === 'BOND' && (
+        <AddBondForm initialData={editingAsset} onClose={() => setEditingAsset(null)} />
+      )}
+      {editingAsset?.assetType === 'ESOP_RSU' && (
+        <AddEsopRsuForm initialData={editingAsset} onClose={() => setEditingAsset(null)} />
       )}
       {editingAsset?.assetType === 'STOCK' && (
         <AddStockForm initialData={editingAsset} onClose={() => setEditingAsset(null)} />
@@ -242,57 +327,143 @@ export default function Assets() {
                                   <div key={asset.id} className="bg-surface p-5 rounded-xl border border-border hover:border-accent-500/50 transition-colors shadow-sm">
                                     <div className="flex justify-between items-start mb-4">
                                       <div>
-                                        <h3 className="font-medium text-lg leading-tight">{asset.name}</h3>
+                                        <div className="flex items-center gap-2">
+                                          <h3 className="font-medium text-lg leading-tight">{asset.name}</h3>
+                                          {asset.currency && asset.currency !== 'INR' && (
+                                            <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded bg-sky-500/20 text-sky-300 border border-sky-500/30">
+                                              {asset.currency}
+                                            </span>
+                                          )}
+                                        </div>
                                         <p className="text-text-secondary text-sm">Owner: {asset.familyMemberName || `ID ${asset.familyMemberId}`}</p>
                                       </div>
                                       
-                                      <div className="relative">
-                                        <button 
-                                          onClick={(e) => {
-                                            e.stopPropagation();
-                                            setMenuOpenId(menuOpenId === asset.id ? null : asset.id);
-                                          }}
-                                          className="p-1 hover:bg-surface-hover rounded text-text-secondary hover:text-text-primary transition-colors"
-                                        >
-                                          <MoreVertical className="w-5 h-5" />
-                                        </button>
-                                        
-                                        {menuOpenId === asset.id && (
-                                          <div className="absolute right-0 mt-1 w-36 bg-surface border border-border rounded-lg shadow-xl overflow-hidden z-10">
-                                            <button 
-                                              onClick={() => {
-                                                setMenuOpenId(null);
-                                                setEditingAsset(asset);
-                                              }}
-                                              className="w-full flex items-center gap-2 px-4 py-2 text-sm text-left hover:bg-surface-hover"
-                                            >
-                                              <Edit2 className="w-4 h-4" />
-                                              Edit
-                                            </button>
-                                            <button 
-                                              onClick={() => {
-                                                setMenuOpenId(null);
-                                                setAssetToDelete(asset.id);
-                                              }}
-                                              className="w-full flex items-center gap-2 px-4 py-2 text-sm text-left text-red-400 hover:bg-red-400/10"
-                                            >
-                                              <Trash2 className="w-4 h-4" />
-                                              Delete
-                                            </button>
-                                          </div>
-                                        )}
-                                      </div>
+                                      {family?.currentUserRole !== 'VIEWER' && (
+                                        <div className="relative">
+                                          <button 
+                                            onClick={(e) => {
+                                              e.stopPropagation();
+                                              setMenuOpenId(menuOpenId === asset.id ? null : asset.id);
+                                            }}
+                                            className="p-1 hover:bg-surface-hover rounded text-text-secondary hover:text-text-primary transition-colors"
+                                          >
+                                            <MoreVertical className="w-5 h-5" />
+                                          </button>
+                                          
+                                          {menuOpenId === asset.id && (
+                                            <div className="absolute right-0 mt-1 w-36 bg-surface border border-border rounded-lg shadow-xl overflow-hidden z-10">
+                                              <button 
+                                                onClick={() => {
+                                                  setMenuOpenId(null);
+                                                  setSelectedAssetForDocs({ id: asset.id, name: asset.name, type: asset.assetType });
+                                                }}
+                                                className="w-full flex items-center gap-2 px-4 py-2 text-sm text-left hover:bg-surface-hover text-indigo-600"
+                                              >
+                                                <HardDrive className="w-4 h-4" />
+                                                Documents
+                                              </button>
+                                              <button 
+                                                onClick={() => {
+                                                  setMenuOpenId(null);
+                                                  setEditingAsset(asset);
+                                                }}
+                                                className="w-full flex items-center gap-2 px-4 py-2 text-sm text-left hover:bg-surface-hover"
+                                              >
+                                                <Edit2 className="w-4 h-4" />
+                                                Edit
+                                              </button>
+                                              <button 
+                                                onClick={() => {
+                                                  setMenuOpenId(null);
+                                                  setAssetToDelete(asset.id);
+                                                }}
+                                                className="w-full flex items-center gap-2 px-4 py-2 text-sm text-left text-red-400 hover:bg-red-400/10"
+                                              >
+                                                <Trash2 className="w-4 h-4" />
+                                                Delete
+                                              </button>
+                                            </div>
+                                          )}
+                                        </div>
+                                      )}
                                     </div>
                                     
                                     <div className="space-y-2 mt-4">
+                                      {asset.currency && asset.currency !== 'INR' && (
+                                        <div className="bg-sky-500/10 border border-sky-500/20 rounded-lg p-2.5 text-xs space-y-1 mb-2">
+                                          <div className="flex justify-between text-sky-200">
+                                            <span>Original Value ({asset.currency}):</span>
+                                            <span className="font-semibold">{formatOriginalCurrency(asset.originalCurrentValue, asset.currency)}</span>
+                                          </div>
+                                          <div className="flex justify-between text-sky-200/80">
+                                            <span>Original Invested:</span>
+                                            <span>{formatOriginalCurrency(asset.originalInvestedAmount, asset.currency)}</span>
+                                          </div>
+                                          {asset.exchangeRate && (
+                                            <div className="flex justify-between text-[11px] text-sky-300/70 pt-1 border-t border-sky-500/10">
+                                              <span>Live FX Rate:</span>
+                                              <span>1 {asset.currency} = ₹{asset.exchangeRate.toFixed(2)}</span>
+                                            </div>
+                                          )}
+                                        </div>
+                                      )}
+
                                       <div className="flex justify-between text-sm">
-                                        <span className="text-text-secondary">Invested:</span>
+                                        <span className="text-text-secondary">{asset.currency && asset.currency !== 'INR' ? 'Converted Invested (₹):' : 'Invested:'}</span>
                                         <span className="font-medium">{formatCurrency(asset.investedAmount)}</span>
                                       </div>
                                       <div className="flex justify-between text-sm">
-                                        <span className="text-text-secondary">Current Value:</span>
+                                        <span className="text-text-secondary">{asset.currency && asset.currency !== 'INR' ? 'Converted Value (₹):' : 'Current Value:'}</span>
                                         <span className="font-medium text-gold-300">{formatCurrency(asset.currentValue)}</span>
                                       </div>
+                                      {/* Specific details for ESOPs / RSUs */}
+                                      {asset.assetType === 'ESOP_RSU' && (
+                                        <div className="pt-2 border-t border-border/50 space-y-1.5 text-xs">
+                                          <div className="flex justify-between text-text-secondary">
+                                            <span>Vested / Total Units:</span>
+                                            <span className="font-medium text-text-primary">
+                                              {asset.vestedUnits || 0} / {asset.totalUnitsGranted || 0} units
+                                            </span>
+                                          </div>
+                                          {asset.strikePrice !== undefined && asset.strikePrice > 0 && (
+                                            <div className="flex justify-between text-text-secondary">
+                                              <span>Strike Price:</span>
+                                              <span className="font-medium text-text-primary">
+                                                {asset.currency === 'USD' ? '$' : '₹'}{asset.strikePrice}
+                                              </span>
+                                            </div>
+                                          )}
+                                          {asset.exercisableGain !== undefined && asset.exercisableGain > 0 && (
+                                            <div className="flex justify-between text-text-secondary">
+                                              <span>Exercisable Net Gain:</span>
+                                              <span className="font-medium text-emerald-400">
+                                                {asset.currency === 'USD' ? '$' : '₹'}{asset.exercisableGain.toLocaleString('en-IN')}
+                                              </span>
+                                            </div>
+                                          )}
+                                        </div>
+                                      )}
+
+                                      {/* Specific details for Bonds / Fixed Income */}
+                                      {asset.assetType === 'BOND' && (
+                                        <div className="pt-2 border-t border-border/50 space-y-1.5 text-xs">
+                                          {asset.couponRate && (
+                                            <div className="flex justify-between text-text-secondary">
+                                              <span>Coupon Rate:</span>
+                                              <span className="font-medium text-accent-400">{asset.couponRate}% p.a.</span>
+                                            </div>
+                                          )}
+                                          {asset.maturityDate && (
+                                            <div className="flex justify-between text-text-secondary">
+                                              <span>Maturity:</span>
+                                              <span className="font-medium text-text-primary">
+                                                {new Date(asset.maturityDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
+                                              </span>
+                                            </div>
+                                          )}
+                                        </div>
+                                      )}
+
                                       <div className="flex justify-between text-sm pt-2 border-t border-border">
                                         <span className="text-text-secondary">Gain/Loss:</span>
                                         <span className={`font-medium ${asset.gainLoss >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
@@ -304,6 +475,14 @@ export default function Assets() {
                                           <span>XIRR / CAGR:</span>
                                           <span className="font-semibold text-text-primary">
                                             {analytics.assetAnalytics[asset.id].xirr.toFixed(1)}% / {analytics.assetAnalytics[asset.id].cagr.toFixed(1)}%
+                                          </span>
+                                        </div>
+                                      )}
+                                      {asset.nomineeName && (
+                                        <div className="flex justify-between text-xs pt-2 text-text-secondary border-t border-border/50">
+                                          <span>Nominee:</span>
+                                          <span className="font-semibold text-text-primary">
+                                            {asset.nomineeName} {asset.nomineeRelationship ? `(${asset.nomineeRelationship})` : ''}
                                           </span>
                                         </div>
                                       )}
@@ -333,6 +512,24 @@ export default function Assets() {
         isDestructive={true}
         onConfirm={confirmDelete}
         onCancel={() => setAssetToDelete(null)}
+      />
+
+      <ExportModal
+        isOpen={isExportOpen}
+        onClose={() => setIsExportOpen(false)}
+        assets={allAssets || []}
+        analytics={analytics}
+      />
+
+      <DocumentVaultModal
+        isOpen={isVaultOpen || !!selectedAssetForDocs}
+        onClose={() => {
+          setIsVaultOpen(false);
+          setSelectedAssetForDocs(null);
+        }}
+        assetId={selectedAssetForDocs?.id}
+        assetName={selectedAssetForDocs?.name}
+        assetType={selectedAssetForDocs?.type}
       />
     </div>
   );

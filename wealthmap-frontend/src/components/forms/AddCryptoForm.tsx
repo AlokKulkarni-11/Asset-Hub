@@ -8,6 +8,8 @@ import { addCryptoAsset, updateCryptoAsset, searchCrypto } from '../../api/asset
 import type { CryptoSearchResponse } from '../../api/assets.api';
 import { useQueryClient } from '@tanstack/react-query';
 
+import CurrencySelect, { getCurrencySymbol } from '../ui/CurrencySelect';
+
 const addCryptoSchema = z.object({
   coinId: z.string().min(1, 'Coin ID is required'),
   symbol: z.string().min(1, 'Symbol is required'),
@@ -15,7 +17,10 @@ const addCryptoSchema = z.object({
   purchaseDate: z.string().min(1, 'Purchase date is required'),
   units: z.coerce.number().min(0.00000001, 'Units must be greater than 0'),
   averageBuyPrice: z.coerce.number().min(0.01, 'Average buy price must be greater than 0'),
+  currency: z.string().default('INR'),
   notes: z.string().optional(),
+  nomineeName: z.string().optional(),
+  nomineeRelationship: z.string().optional(),
 });
 
 type AddCryptoFormInputs = z.infer<typeof addCryptoSchema>;
@@ -26,9 +31,14 @@ interface Props {
 }
 
 export default function AddCryptoForm({ onClose, initialData }: Props) {
-  const { register, handleSubmit, setValue, reset, formState: { errors } } = useForm<any>({
+  const { register, handleSubmit, setValue, reset, watch, formState: { errors } } = useForm<any>({
     resolver: zodResolver(addCryptoSchema),
+    defaultValues: {
+      currency: 'INR'
+    }
   });
+
+  const selectedCurrency = watch('currency') || 'INR';
 
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -53,16 +63,25 @@ export default function AddCryptoForm({ onClose, initialData }: Props) {
         }
       }
 
+      const cSymbol = (initialData.symbol || initialData.ticker || 'BTC').toUpperCase();
+      const cName = initialData.name || initialData.companyName || (cSymbol === 'BTC' ? 'Bitcoin' : (cSymbol === 'ETH' ? 'Ethereum' : 'Cryptocurrency'));
+      const cId = initialData.coinId || (cSymbol === 'BTC' ? 'bitcoin' : (cSymbol === 'ETH' ? 'ethereum' : cSymbol.toLowerCase()));
+      const cUnits = initialData.units || initialData.quantity || 1;
+      const cPrice = initialData.averageBuyPrice || initialData.purchasePrice || initialData.unitPrice || (initialData.originalInvestedAmount && cUnits ? initialData.originalInvestedAmount / cUnits : 50000);
+
       reset({
-        coinId: initialData.coinId,
-        symbol: initialData.symbol,
-        name: initialData.name || initialData.companyName,
-        purchaseDate: formattedDate,
-        units: initialData.units,
-        averageBuyPrice: initialData.averageBuyPrice,
+        coinId: cId,
+        symbol: cSymbol,
+        name: cName,
+        purchaseDate: formattedDate || new Date().toISOString().split('T')[0],
+        units: cUnits,
+        averageBuyPrice: cPrice,
+        currency: initialData.currency || 'INR',
         notes: initialData.notes || '',
+        nomineeName: initialData.nomineeName || '',
+        nomineeRelationship: initialData.nomineeRelationship || '',
       });
-      setSearchQuery(initialData.name || initialData.coinId);
+      setSearchQuery(cName);
     }
   }, [initialData, reset]);
 
@@ -109,7 +128,7 @@ export default function AddCryptoForm({ onClose, initialData }: Props) {
       queryClient.invalidateQueries({ queryKey: ['assets', 'all'] });
       onClose();
     } catch (err: any) {
-      let errorMessage = 'Failed to add Cryptocurrency';
+      let errorMessage = 'Failed to add Crypto';
       if (err.response?.data?.message) {
         errorMessage = err.response.data.message;
       } else if (err.response?.data && typeof err.response.data === 'object') {
@@ -126,8 +145,8 @@ export default function AddCryptoForm({ onClose, initialData }: Props) {
   };
 
   return (
-    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 pb-20 md:pb-4">
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 relative border-2 border-sky-500 overflow-y-auto max-h-[70vh] md:max-h-[85vh]">
+    <div className="fixed inset-0 bg-slate-900/60 z-50 flex items-center justify-center p-4 pb-20 md:pb-4">
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 relative border border-slate-200 overflow-y-auto max-h-[70vh] md:max-h-[85vh]">
         <button onClick={onClose} className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition-colors">
           <X className="w-5 h-5" />
         </button>
@@ -145,12 +164,12 @@ export default function AddCryptoForm({ onClose, initialData }: Props) {
 
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
             <div className="relative z-10">
-              <label className="block text-sm font-medium text-gray-700 mb-1">Search Coin (e.g. Bitcoin, Ethereum)</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Search Cryptocurrency</label>
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                 <input 
                   type="text"
-                  placeholder="Search coins..." 
+                  placeholder="e.g. Bitcoin, Ethereum, Solana..." 
                   className="glass-input pl-9 text-gray-900"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
@@ -164,12 +183,12 @@ export default function AddCryptoForm({ onClose, initialData }: Props) {
 
               {/* Typeahead Dropdown */}
               {showDropdown && searchResults.length > 0 && (
-                <div className="absolute top-full left-0 right-0 mt-1 bg-white border-2 border-accent-500 rounded-lg shadow-xl max-h-60 overflow-y-auto overflow-x-hidden z-50">
+                <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-xl max-h-60 overflow-y-auto z-50">
                   {searchResults.map((coin, idx) => (
                     <div 
                       key={idx} 
                       onClick={() => selectCrypto(coin)}
-                      className="p-3 hover:bg-sky-50 cursor-pointer border-b border-sky-100 last:border-0 transition-colors"
+                      className="p-3 hover:bg-sky-50 cursor-pointer border-b border-gray-100 last:border-0 transition-colors"
                     >
                       <div className="flex items-center justify-between">
                         <div>
@@ -191,6 +210,13 @@ export default function AddCryptoForm({ onClose, initialData }: Props) {
               <p className="text-red-600 text-xs mt-1 font-medium">Please select a valid coin from the search.</p>
             )}
 
+            {/* Multi-Currency Selector */}
+            <CurrencySelect
+              value={selectedCurrency}
+              onChange={(code) => setValue('currency', code, { shouldValidate: true })}
+              label="Purchase Currency"
+            />
+
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Units (e.g. 0.05)</label>
@@ -198,7 +224,9 @@ export default function AddCryptoForm({ onClose, initialData }: Props) {
                 {errors.units && <p className="text-red-600 text-xs mt-1 font-medium">{errors.units.message}</p>}
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Avg Buy Price (₹)</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Avg Buy Price ({getCurrencySymbol(selectedCurrency)})
+                </label>
                 <input {...register('averageBuyPrice')} type="number" step="0.01" className="glass-input text-gray-900" />
                 {errors.averageBuyPrice && <p className="text-red-600 text-xs mt-1 font-medium">{errors.averageBuyPrice.message}</p>}
               </div>
@@ -213,6 +241,24 @@ export default function AddCryptoForm({ onClose, initialData }: Props) {
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Notes</label>
               <textarea {...register('notes')} className="glass-input text-gray-900" rows={2} />
+            </div>
+
+            <div className="grid grid-cols-2 gap-4 border-t border-gray-100 pt-3">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Nominee Name</label>
+                <input {...register('nomineeName')} type="text" placeholder="Optional" className="glass-input text-gray-900" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Relationship</label>
+                <select {...register('nomineeRelationship')} className="glass-input text-gray-900">
+                  <option value="">None / Select</option>
+                  <option value="Spouse">Spouse</option>
+                  <option value="Child">Child</option>
+                  <option value="Parent">Parent</option>
+                  <option value="Sibling">Sibling</option>
+                  <option value="Other">Other</option>
+                </select>
+              </div>
             </div>
 
             <button type="submit" disabled={loading} className="btn-primary w-full mt-4">

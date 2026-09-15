@@ -18,6 +18,7 @@ import java.util.List;
 public class FixedIncomeController {
 
     private final FixedDepositService fixedDepositService;
+    private final com.wealthmap.service.AuditLogService auditLogService;
 
     @PostMapping
     public ResponseEntity<AssetResponse> addFD(
@@ -26,6 +27,7 @@ public class FixedIncomeController {
         
         String userEmail = authentication.getName();
         AssetResponse response = fixedDepositService.addFD(request, userEmail);
+        auditLogService.log(userEmail, "ADD_ASSET", "FIXED_DEPOSIT", response.getId(), "Added FD: Principal amount " + request.getPrincipalAmount());
         return ResponseEntity.ok(response);
     }
 
@@ -50,6 +52,7 @@ public class FixedIncomeController {
             Authentication authentication) {
         String userEmail = authentication.getName();
         FixedDepositResponse response = fixedDepositService.updateFD(id, request, userEmail);
+        auditLogService.log(userEmail, "UPDATE_ASSET", "FIXED_DEPOSIT", response.getId(), "Updated FD Principal to " + request.getPrincipalAmount());
         return ResponseEntity.ok(response);
     }
 }

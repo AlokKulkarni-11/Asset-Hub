@@ -15,5 +15,7 @@ public enum AssetType {
     LIC_POLICY,
     POST_OFFICE_SCHEME,
     REAL_ESTATE,
-    CRYPTOCURRENCY
+    CRYPTOCURRENCY,
+    BOND,
+    ESOP_RSU
 }

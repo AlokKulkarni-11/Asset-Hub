@@ -67,18 +67,25 @@ public class RebalancingService {
                 .sum();
 
         double goldValue = assets.stream()
-                .filter(asset -> asset.getAssetType() == AssetType.GOLD)
+                .filter(asset -> asset.getAssetType() == AssetType.GOLD || asset.getAssetType() == AssetType.SOVEREIGN_GOLD_BOND)
                 .mapToDouble(this::currentValue)
                 .sum();
+
+        double debtAssetsValue = assets.stream()
+                .filter(asset -> asset.getAssetType() == AssetType.FIXED_DEPOSIT || asset.getAssetType() == AssetType.BOND || asset.getAssetType() == AssetType.PPF)
+                .mapToDouble(this::currentValue)
+                .sum();
+
+        double totalDebt = debtAssetsValue + liabilities;
 
         double equityValue = assets.stream()
-                .filter(asset -> asset.getAssetType() != AssetType.GOLD)
+                .filter(asset -> asset.getAssetType() == AssetType.STOCK || asset.getAssetType() == AssetType.MUTUAL_FUND || asset.getAssetType() == AssetType.ESOP_RSU || asset.getAssetType() == AssetType.CRYPTOCURRENCY || asset.getAssetType() == AssetType.REAL_ESTATE)
                 .mapToDouble(this::currentValue)
                 .sum();
 
-        double portfolioBase = equityValue + goldValue + liabilities;
+        double portfolioBase = equityValue + goldValue + totalDebt;
         double currentEquityPct = portfolioBase > 0 ? (equityValue / portfolioBase) * 100.0 : 0.0;
-        double currentDebtPct = portfolioBase > 0 ? (liabilities / portfolioBase) * 100.0 : 0.0;
+        double currentDebtPct = portfolioBase > 0 ? (totalDebt / portfolioBase) * 100.0 : 0.0;
         double currentGoldPct = portfolioBase > 0 ? (goldValue / portfolioBase) * 100.0 : 0.0;
 
         double equityDrift = currentEquityPct - target.getTargetEquityPct();

@@ -3,6 +3,7 @@ package com.wealthmap.service;
 import com.wealthmap.dto.request.PasswordChangeRequest;
 import com.wealthmap.dto.request.ProfileUpdateRequest;
 import com.wealthmap.dto.response.AuthResponse;
+import com.wealthmap.dto.response.UserProfileResponse;
 import com.wealthmap.entity.User;
 import com.wealthmap.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -48,5 +49,18 @@ public class UserService {
 
         user.setPassword(passwordEncoder.encode(request.getNewPassword()));
         userRepository.save(user);
+    }
+
+    public UserProfileResponse getProfile(String email) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+        
+        UserProfileResponse res = new UserProfileResponse();
+        res.setId(user.getId());
+        res.setName(user.getName());
+        res.setEmail(user.getEmail());
+        res.setMobileNumber(user.getMobileNumber());
+        res.setTfaEnabled(user.isTfaEnabled());
+        return res;
     }
 }

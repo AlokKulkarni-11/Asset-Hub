@@ -4,7 +4,8 @@ import { User, Mail, Shield, Loader2, Save, LogOut, Phone } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { updateProfile } from '../api/users.api';
+import { useQuery } from '@tanstack/react-query';
+import { updateProfile, getProfile, setup2FA, enable2FA, disable2FA } from '../api/users.api';
 import ChangePasswordModal from '../components/forms/ChangePasswordModal';
 
 const profileSchema = z.object({
@@ -25,6 +26,18 @@ export default function Profile() {
   const [successMsg, setSuccessMsg] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
   const [showPasswordModal, setShowPasswordModal] = useState(false);
+
+  // 2FA Wizard States
+  const [tfaSetupData, setTfaSetupData] = useState<{ secret: string; qrCodeUri: string } | null>(null);
+  const [verificationCode, setVerificationCode] = useState('');
+  const [recoveryCodes, setRecoveryCodes] = useState<string[] | null>(null);
+  const [disabling, setDisabling] = useState(false);
+  const [disableCode, setDisableCode] = useState('');
+
+  const { data: profile, refetch: refetchProfile } = useQuery({
+    queryKey: ['userProfile'],
+    queryFn: getProfile,
+  });
 
   const { register, handleSubmit, formState: { errors } } = useForm<ProfileForm>({
     resolver: zodResolver(profileSchema),
@@ -150,6 +163,187 @@ export default function Profile() {
             </button>
           </div>
         </form>
+      </div>
+
+      {/* Two-Factor Authentication (2FA) Card */}
+      <div className="glass-card p-8">
+        <h2 className="text-xl font-semibold mb-2 flex items-center gap-2">
+          <Shield className="w-5 h-5 text-accent-500" />
+          Two-Factor Authentication (2FA)
+        </h2>
+        <p className="text-sm text-text-secondary mb-6">
+          Add an extra layer of security to your account by requiring a verification code from Google Authenticator or Microsoft Authenticator.
+        </p>
+
+        {profile?.tfaEnabled ? (
+          <div className="space-y-4">
+            <div className="flex items-center gap-3 p-4 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 rounded-xl">
+              <Shield className="w-8 h-8 shrink-0" />
+              <div>
+                <p className="font-semibold text-sm">Two-Factor Authentication is Enabled</p>
+                <p className="text-xs opacity-80">Your account is secured with secondary code verification.</p>
+              </div>
+            </div>
+
+            {disabling ? (
+              <form onSubmit={async (e) => {
+                e.preventDefault();
+                try {
+                  setLoading(true);
+                  await disable2FA(disableCode);
+                  setDisabling(false);
+                  setDisableCode('');
+                  refetchProfile();
+                  alert('2FA disabled successfully.');
+                } catch (err: any) {
+                  alert(err.response?.data?.message || err.response?.data || 'Failed to disable 2FA');
+                } finally {
+                  setLoading(false);
+                }
+              }} className="p-4 bg-surface border border-border rounded-xl space-y-3">
+                <p className="text-xs text-text-secondary">Enter the current 6-digit authenticator code to confirm disabling 2FA:</p>
+                <div className="flex gap-3">
+                  <input
+                    type="text"
+                    maxLength={6}
+                    placeholder="000000"
+                    value={disableCode}
+                    onChange={(e) => setDisableCode(e.target.value)}
+                    className="glass-input text-center text-sm font-semibold max-w-[120px]"
+                    autoFocus
+                  />
+                  <button type="submit" className="btn-primary py-1 px-4 text-xs bg-red-500 hover:bg-red-600 border-red-500">Confirm Disable</button>
+                  <button type="button" onClick={() => setDisabling(false)} className="px-4 py-1 border border-border rounded-lg text-xs text-text-secondary">Cancel</button>
+                </div>
+              </form>
+            ) : (
+              <button
+                onClick={() => setDisabling(true)}
+                className="btn-primary py-2 px-4 text-xs bg-red-500/10 text-red-400 border-red-500/20 hover:bg-red-500/20"
+              >
+                Disable Two-Factor Authentication
+              </button>
+            )}
+          </div>
+        ) : (
+          <div className="space-y-6">
+            {!tfaSetupData ? (
+              <div className="flex items-center gap-3 p-4 bg-surface border border-border rounded-xl justify-between flex-wrap gap-y-4">
+                <div className="flex items-center gap-3">
+                  <Shield className="w-8 h-8 text-text-secondary shrink-0" />
+                  <div>
+                    <p className="font-semibold text-sm">Two-Factor Authentication is Disabled</p>
+                    <p className="text-xs text-text-secondary">Set up an authenticator application to enable.</p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={async () => {
+                    try {
+                      setLoading(true);
+                      const data = await setup2FA();
+                      setTfaSetupData(data);
+                    } catch (err) {
+                      alert('Failed to initialize 2FA setup.');
+                    } finally {
+                      setLoading(false);
+                    }
+                  }}
+                  className="btn-primary py-2 px-4 text-xs"
+                >
+                  Enable 2FA
+                </button>
+              </div>
+            ) : (
+              <div className="p-6 bg-surface border border-border rounded-xl space-y-6">
+                <h3 className="text-md font-medium text-text-primary">Set Up Authenticator App</h3>
+                
+                {recoveryCodes ? (
+                  <div className="space-y-4">
+                    <div className="p-4 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 rounded-xl space-y-2">
+                      <p className="font-bold text-sm">2FA Setup Complete!</p>
+                      <p className="text-xs">Save these recovery codes in a secure location. They can be used to log in if you lose your authenticator device. Each code can only be used once.</p>
+                    </div>
+                    <div className="bg-surface-hover border border-border rounded-xl p-4 font-mono text-center tracking-wider text-sm space-y-2 select-all">
+                      {recoveryCodes.map(code => (
+                        <div key={code}>{code}</div>
+                      ))}
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setTfaSetupData(null);
+                        setRecoveryCodes(null);
+                        setVerificationCode('');
+                        refetchProfile();
+                      }}
+                      className="btn-primary w-full py-2"
+                    >
+                      Close Setup
+                    </button>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    <ol className="list-decimal pl-4 text-xs text-text-secondary space-y-4">
+                      <li>Scan this QR code using Google Authenticator, Microsoft Authenticator, or Authy:</li>
+                      <div className="flex justify-center py-2">
+                        <img
+                          src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(tfaSetupData.qrCodeUri)}`}
+                          alt="2FA QR Code"
+                          className="w-44 h-44 border border-border rounded-lg p-2 bg-white"
+                        />
+                      </div>
+                      <li>Or enter the secret key manually if you cannot scan the code:</li>
+                      <div className="bg-surface-hover border border-border rounded p-2 text-center text-xs font-mono select-all text-text-primary">
+                        {tfaSetupData.secret}
+                      </div>
+                      <li>Enter the 6-digit verification code from your authenticator app below:</li>
+                    </ol>
+
+                    <div className="flex gap-3 pt-2">
+                      <input
+                        type="text"
+                        maxLength={6}
+                        placeholder="000000"
+                        value={verificationCode}
+                        onChange={(e) => setVerificationCode(e.target.value)}
+                        className="glass-input text-center text-sm font-semibold max-w-[120px]"
+                      />
+                      <button
+                        type="button"
+                        onClick={async () => {
+                          try {
+                            setLoading(true);
+                            const res = await enable2FA(verificationCode);
+                            setRecoveryCodes(res.recoveryCodes);
+                          } catch (err: any) {
+                            alert(err.response?.data?.message || err.response?.data || 'Failed to verify and enable 2FA.');
+                          } finally {
+                            setLoading(false);
+                          }
+                        }}
+                        disabled={verificationCode.length !== 6 || loading}
+                        className="btn-primary py-2 px-4 text-xs flex-1"
+                      >
+                        Verify & Enable
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setTfaSetupData(null);
+                          setVerificationCode('');
+                        }}
+                        className="px-4 py-2 border border-border rounded-lg text-xs text-text-secondary"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
       {showPasswordModal && (

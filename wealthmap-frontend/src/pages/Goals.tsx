@@ -9,6 +9,7 @@ import { getAllAssets } from '../api/assets.api';
 import { getAllLiabilities } from '../api/liabilities.api';
 import { Target, Plus, ShieldCheck, Calculator, Trash2, Edit2, CheckCircle2, ChevronRight, AlertCircle, X, Loader2 } from 'lucide-react';
 import SwpCalculator from './SwpCalculator';
+import { getMyFamily, getFamilyAssets } from '../api/family.api';
 
 export default function Goals() {
   const queryClient = useQueryClient();
@@ -25,6 +26,7 @@ export default function Goals() {
   const [goalTargetDate, setGoalTargetDate] = useState('');
   const [goalNotes, setGoalNotes] = useState('');
   const [selectedAssetIds, setSelectedAssetIds] = useState<number[]>([]);
+  const [goalShared, setGoalShared] = useState(false);
 
   // Emergency Fund Form State
   const [monthlyExpenseInput, setMonthlyExpenseInput] = useState('');
@@ -41,6 +43,17 @@ export default function Goals() {
   const [customNetWorthInput, setCustomNetWorthInput] = useState('');
 
   // Queries
+  const { data: family } = useQuery({
+    queryKey: ['family', 'me'],
+    queryFn: getMyFamily,
+  });
+
+  const { data: familyAssets } = useQuery({
+    queryKey: ['family', 'assets'],
+    queryFn: getFamilyAssets,
+    enabled: !!family,
+  });
+
   const { data: goals, isLoading: goalsLoading } = useQuery({
     queryKey: ['goals'],
     queryFn: getAllGoals
@@ -83,6 +96,7 @@ export default function Goals() {
       setGoalTargetDate(goal.targetDate || '');
       setGoalNotes(goal.notes || '');
       setSelectedAssetIds(goal.taggedAssetIds || []);
+      setGoalShared(goal.shared || false);
     } else {
       setEditingGoal(null);
       setGoalName('');
@@ -90,6 +104,7 @@ export default function Goals() {
       setGoalTargetDate('');
       setGoalNotes('');
       setSelectedAssetIds([]);
+      setGoalShared(false);
     }
     setShowGoalModal(true);
   };
@@ -104,7 +119,8 @@ export default function Goals() {
       targetAmount: Number(goalTargetAmount),
       targetDate: goalTargetDate || undefined,
       notes: goalNotes,
-      taggedAssetIds: selectedAssetIds
+      taggedAssetIds: selectedAssetIds,
+      shared: goalShared
     };
 
     if (editingGoal) {
@@ -230,12 +246,14 @@ export default function Goals() {
         <div className="space-y-6">
           <div className="flex justify-between items-center">
             <h2 className="text-lg font-medium text-text-primary">Financial Target Goals</h2>
-            <button 
-              onClick={() => openGoalModal()}
-              className="btn-primary text-xs"
-            >
-              <Plus className="w-4 h-4" /> Add Goal
-            </button>
+            {family?.currentUserRole !== 'VIEWER' && (
+              <button 
+                onClick={() => openGoalModal()}
+                className="btn-primary text-xs"
+              >
+                <Plus className="w-4 h-4" /> Add Goal
+              </button>
+            )}
           </div>
 
           {goalsLoading ? (
@@ -245,7 +263,9 @@ export default function Goals() {
               <Target className="w-12 h-12 text-accent-500 mb-4 opacity-50" />
               <h3 className="text-lg font-medium mb-2">No Financial Goals Defined</h3>
               <p className="text-text-secondary text-sm mb-4">Set milestone goals like "House Purchase" or "Education" and tag assets to track progress.</p>
-              <button onClick={() => openGoalModal()} className="btn-primary text-xs"><Plus className="w-4 h-4" /> Create First Goal</button>
+              {family?.currentUserRole !== 'VIEWER' && (
+                <button onClick={() => openGoalModal()} className="btn-primary text-xs"><Plus className="w-4 h-4" /> Create First Goal</button>
+              )}
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -254,15 +274,24 @@ export default function Goals() {
                   <div>
                     <div className="flex justify-between items-start mb-2">
                       <div>
-                        <h3 className="text-xl font-bold text-text-primary">{g.name}</h3>
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <h3 className="text-xl font-bold text-text-primary">{g.name}</h3>
+                          {g.shared && (
+                            <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-500 bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded-full">
+                              Shared
+                            </span>
+                          )}
+                        </div>
                         {g.targetDate && (
-                          <p className="text-xs text-text-secondary">Target Date: {new Date(g.targetDate).toLocaleDateString('en-IN', { month: 'short', year: 'numeric' })}</p>
+                          <p className="text-xs text-text-secondary mt-1">Target Date: {new Date(g.targetDate).toLocaleDateString('en-IN', { month: 'short', year: 'numeric' })}</p>
                         )}
                       </div>
-                      <div className="flex items-center gap-2">
-                        <button onClick={() => openGoalModal(g)} className="p-1 text-text-secondary hover:text-text-primary"><Edit2 className="w-4 h-4" /></button>
-                        <button onClick={() => handleDeleteGoal(g.id)} className="p-1 text-red-400 hover:text-red-500"><Trash2 className="w-4 h-4" /></button>
-                      </div>
+                      {family?.currentUserRole !== 'VIEWER' && (
+                        <div className="flex items-center gap-2">
+                          <button onClick={() => openGoalModal(g)} className="p-1 text-text-secondary hover:text-text-primary"><Edit2 className="w-4 h-4" /></button>
+                          <button onClick={() => handleDeleteGoal(g.id)} className="p-1 text-red-400 hover:text-red-500"><Trash2 className="w-4 h-4" /></button>
+                        </div>
+                      )}
                     </div>
 
                     {/* Progress Bar */}
@@ -286,10 +315,10 @@ export default function Goals() {
                     <p className="text-xs font-semibold text-text-secondary mb-2">Tagged Portfolio Assets ({g.taggedAssetIds?.length || 0}):</p>
                     <div className="flex flex-wrap gap-1.5">
                       {g.taggedAssetIds?.map(aid => {
-                        const asset = assets?.find(a => a.id === aid);
+                        const asset = (familyAssets || assets)?.find(a => a.id === aid);
                         return asset ? (
                           <span key={aid} className="text-xs px-2 py-1 bg-accent-500/10 border border-accent-500/20 text-accent-500 rounded-md font-medium">
-                            {asset.name} ({formatCurrency(asset.currentValue)})
+                            {asset.name} {asset.familyMemberName ? `(${asset.familyMemberName})` : ''} ({formatCurrency(asset.currentValue)})
                           </span>
                         ) : null;
                       })}
@@ -504,8 +533,8 @@ export default function Goals() {
 
       {/* CREATE/EDIT GOAL MODAL */}
       {showGoalModal && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-surface rounded-2xl border-2 border-accent-500 w-full max-w-md p-6 relative">
+        <div className="fixed inset-0 bg-slate-900/60 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl border border-slate-200 shadow-2xl w-full max-w-md p-6 relative">
             <button onClick={() => setShowGoalModal(false)} className="absolute top-4 right-4 text-text-secondary hover:text-text-primary">
               <X className="w-5 h-5" />
             </button>
@@ -528,7 +557,7 @@ export default function Goals() {
               <div>
                 <label className="block text-xs font-semibold text-text-secondary mb-1">Tag Portfolio Assets toward Goal:</label>
                 <div className="max-h-36 overflow-y-auto space-y-1.5 p-2 bg-surface-hover rounded-lg border border-border">
-                  {assets?.map(a => (
+                  {(familyAssets || assets)?.map(a => (
                     <label key={a.id} className="flex items-center gap-2 text-xs text-text-primary cursor-pointer hover:bg-surface p-1 rounded">
                       <input 
                         type="checkbox" 
@@ -542,11 +571,26 @@ export default function Goals() {
                         }}
                         className="rounded border-border text-accent-500"
                       />
-                      <span className="truncate flex-1">{a.name} ({formatCurrency(a.currentValue)})</span>
+                      <span className="truncate flex-1">{a.name} {a.familyMemberName ? `(${a.familyMemberName})` : ''} ({formatCurrency(a.currentValue)})</span>
                     </label>
                   ))}
                 </div>
               </div>
+
+              {family && (
+                <div className="flex items-center gap-2 py-1.5 border-t border-border">
+                  <input 
+                    type="checkbox" 
+                    id="goalShared"
+                    checked={goalShared}
+                    onChange={e => setGoalShared(e.target.checked)}
+                    className="rounded border-border text-accent-500 focus:ring-accent-500 cursor-pointer"
+                  />
+                  <label htmlFor="goalShared" className="text-xs font-semibold text-text-secondary cursor-pointer select-none">
+                    Shared Family Goal
+                  </label>
+                </div>
+              )}
 
               <button type="submit" className="btn-primary w-full text-xs">Save Goal</button>
             </form>

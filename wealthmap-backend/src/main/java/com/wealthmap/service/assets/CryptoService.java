@@ -30,6 +30,7 @@ public class CryptoService {
     private final AssetRepository assetRepository;
     private final UserRepository userRepository;
     private final PriceProviderFactory priceProviderFactory;
+    private final com.wealthmap.service.CurrencyConversionService currencyConversionService;
 
     @Transactional
     public AssetResponse addCrypto(CryptoRequest request, String userEmail) {
@@ -43,6 +44,9 @@ public class CryptoService {
         crypto.setAssetType(AssetType.CRYPTOCURRENCY);
         crypto.setPurchaseDate(request.getPurchaseDate());
         crypto.setNotes(request.getNotes());
+        crypto.setNomineeName(request.getNomineeName());
+        crypto.setNomineeRelationship(request.getNomineeRelationship());
+        crypto.setCurrency(request.getCurrency() != null && !request.getCurrency().trim().isEmpty() ? request.getCurrency().toUpperCase() : "INR");
         
         crypto.setCoinId(request.getCoinId());
         crypto.setSymbol(request.getSymbol());
@@ -66,6 +70,9 @@ public class CryptoService {
         crypto.setName(request.getName() + " (" + request.getSymbol().toUpperCase() + ")");
         crypto.setPurchaseDate(request.getPurchaseDate());
         crypto.setNotes(request.getNotes());
+        crypto.setNomineeName(request.getNomineeName());
+        crypto.setNomineeRelationship(request.getNomineeRelationship());
+        crypto.setCurrency(request.getCurrency() != null && !request.getCurrency().trim().isEmpty() ? request.getCurrency().toUpperCase() : "INR");
         
         crypto.setCoinId(request.getCoinId());
         crypto.setSymbol(request.getSymbol());
@@ -106,24 +113,40 @@ public class CryptoService {
         response.setAssetType(item.getAssetType());
         response.setPurchaseDate(item.getPurchaseDate());
         response.setNotes(item.getNotes());
+        response.setNomineeName(item.getNomineeName());
+        response.setNomineeRelationship(item.getNomineeRelationship());
         response.setFamilyMemberId(item.getUser().getId());
         response.setFamilyMemberName(item.getUser().getName());
-        response.setInvestedAmount(item.getInvestedAmount());
+
+        String currency = item.getCurrency() != null ? item.getCurrency().toUpperCase() : "INR";
+        response.setCurrency(currency);
+
+        BigDecimal originalInvested = item.getInvestedAmount();
+        response.setOriginalInvestedAmount(originalInvested);
 
         response.setCoinId(item.getCoinId());
         response.setSymbol(item.getSymbol());
         response.setUnits(item.getUnits());
         response.setAverageBuyPrice(item.getAverageBuyPrice());
 
-        BigDecimal currentValue = priceProviderFactory.getProvider(AssetType.CRYPTOCURRENCY).getCurrentPrice(item);
-        response.setCurrentValue(currentValue);
+        BigDecimal originalCurrentValue = priceProviderFactory.getProvider(AssetType.CRYPTOCURRENCY).getCurrentPrice(item);
+        response.setOriginalCurrentValue(originalCurrentValue);
 
-        BigDecimal gainLoss = currentValue.subtract(item.getInvestedAmount());
+        BigDecimal exchangeRate = currencyConversionService.getExchangeRate(currency, "INR");
+        response.setExchangeRate(exchangeRate);
+
+        BigDecimal convertedInvested = originalInvested.multiply(exchangeRate).setScale(2, RoundingMode.HALF_UP);
+        BigDecimal convertedCurrentValue = originalCurrentValue.multiply(exchangeRate).setScale(2, RoundingMode.HALF_UP);
+
+        response.setInvestedAmount(convertedInvested);
+        response.setCurrentValue(convertedCurrentValue);
+
+        BigDecimal gainLoss = convertedCurrentValue.subtract(convertedInvested);
         response.setGainLoss(gainLoss);
 
         BigDecimal gainPercent = BigDecimal.ZERO;
-        if (item.getInvestedAmount().compareTo(BigDecimal.ZERO) > 0) {
-            gainPercent = gainLoss.divide(item.getInvestedAmount(), 4, RoundingMode.HALF_UP)
+        if (convertedInvested.compareTo(BigDecimal.ZERO) > 0) {
+            gainPercent = gainLoss.divide(convertedInvested, 4, RoundingMode.HALF_UP)
                     .multiply(BigDecimal.valueOf(100));
         }
         response.setGainPercent(gainPercent);

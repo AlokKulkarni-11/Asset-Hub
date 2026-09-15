@@ -42,20 +42,25 @@ export default function Maturities() {
         const daysRemaining = differenceInDays(matDate, today);
 
         let estimatedAmount = a.investedAmount;
-        if (a.assetType === 'FIXED_DEPOSIT' && a.interestRate && a.startDate) {
+        const rate = a.couponRate || a.interestRate;
+        if ((a.assetType === 'FIXED_DEPOSIT' || a.assetType === 'BOND') && rate && a.startDate) {
           const start = parseISO(a.startDate);
           const totalDays = differenceInDays(matDate, start);
           const totalYears = totalDays / 365.25;
-          estimatedAmount = a.investedAmount * (1 + ((a.interestRate / 100) * totalYears));
+          estimatedAmount = a.investedAmount * (1 + ((rate / 100) * totalYears));
         }
+
+        const label = a.assetType === 'BOND' 
+          ? (a.bondType ? a.bondType.replace(/_/g, ' ') : 'Bond')
+          : 'Fixed Deposit';
 
         return {
           ...a,
-          label: 'Fixed Deposit',
+          label,
           matDate,
           daysRemaining,
           estimatedAmount,
-          reminderType: 'FD',
+          reminderType: a.assetType === 'BOND' ? 'BOND' : 'FD',
         };
       });
 

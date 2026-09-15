@@ -3,6 +3,7 @@ package com.wealthmap.controller;
 import com.wealthmap.dto.request.PasswordChangeRequest;
 import com.wealthmap.dto.request.ProfileUpdateRequest;
 import com.wealthmap.dto.response.AuthResponse;
+import com.wealthmap.dto.response.UserProfileResponse;
 import com.wealthmap.service.UserService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -17,6 +18,12 @@ public class UserController {
 
     @Autowired
     private UserService userService;
+
+    @GetMapping("/profile")
+    public ResponseEntity<UserProfileResponse> getProfile(Authentication authentication) {
+        String email = authentication.getName();
+        return ResponseEntity.ok(userService.getProfile(email));
+    }
 
     @PutMapping("/profile")
     public ResponseEntity<AuthResponse> updateProfile(Authentication authentication, @Valid @RequestBody ProfileUpdateRequest request) {

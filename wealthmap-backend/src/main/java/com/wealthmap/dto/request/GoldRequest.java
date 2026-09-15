@@ -30,4 +30,7 @@ public class GoldRequest {
     @NotNull(message = "Purchase price is required")
     @DecimalMin(value = "1.0", message = "Purchase price must be greater than 0")
     private BigDecimal purchasePrice;
+    private String currency;
+    private String nomineeName;
+    private String nomineeRelationship;
 }

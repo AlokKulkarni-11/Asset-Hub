@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useSearchParams, useNavigate } from 'react-router-dom';
-import { getMyFamily, createFamily, inviteMember, acceptInvite, getPendingInvites, getFamilyAssets, getFamilyRollup, leaveFamily } from '../api/family.api';
-import { Plus, Users, UserPlus, Loader2, Link, DollarSign, Mail, LogOut, ChevronDown, CheckCircle2, Circle } from 'lucide-react';
+import { getMyFamily, createFamily, inviteMember, acceptInvite, getPendingInvites, getFamilyAssets, getFamilyRollup, leaveFamily, updateFamilyRole, getAuditLogs } from '../api/family.api';
+import type { AuditLog } from '../api/family.api';
+import { Plus, Users, UserPlus, Loader2, Link, IndianRupee, Mail, LogOut, ChevronDown, CheckCircle2, Circle, Target } from 'lucide-react';
 import { useAuthStore } from '../store/authStore';
 import { ResponsiveContainer, PieChart, Pie, Cell, Tooltip as RechartsTooltip, Legend, BarChart, Bar, XAxis, YAxis, CartesianGrid } from 'recharts';
+import { getAllGoals } from '../api/goals.api';
 
 export default function Family() {
   const { user } = useAuthStore();
@@ -28,6 +30,12 @@ export default function Family() {
     queryFn: getMyFamily,
   });
 
+  const { data: goals } = useQuery({
+    queryKey: ['goals'],
+    queryFn: getAllGoals,
+    enabled: !!family,
+  });
+
   const { data: familyAssets, isLoading: assetsLoading } = useQuery({
     queryKey: ['family', 'assets'],
     queryFn: getFamilyAssets,
@@ -37,6 +45,12 @@ export default function Family() {
   const { data: familyRollup } = useQuery({
     queryKey: ['family', 'rollup'],
     queryFn: getFamilyRollup,
+    enabled: !!family,
+  });
+
+  const { data: auditLogs } = useQuery({
+    queryKey: ['auditLogs'],
+    queryFn: getAuditLogs,
     enabled: !!family,
   });
 
@@ -189,6 +203,7 @@ export default function Family() {
 
   // --- 2. FAMILY DASHBOARD ---
   const isCreator = family.creatorId === user?.id;
+  const isOwner = isCreator || family.currentUserRole === 'OWNER';
   
   const filteredAssets = selectedMemberIds.length === 0 
     ? familyAssets 
@@ -223,6 +238,7 @@ export default function Family() {
   }));
 
   const sectorAssets = selectedSector ? filteredAssets?.filter(a => a.assetType === selectedSector) : [];
+  const sharedGoals = goals?.filter(g => g.shared) || [];
 
   return (
     <div className="space-y-8">
@@ -355,7 +371,7 @@ export default function Family() {
               <h3 className="text-lg font-medium text-text-primary">Member Comparison</h3>
               <p className="text-xs text-text-secondary mt-1">Net worth bars across family members.</p>
             </div>
-            <DollarSign className="w-5 h-5 text-emerald-400" />
+            <IndianRupee className="w-5 h-5 text-emerald-400" />
           </div>
           <div className="h-[280px]">
             <ResponsiveContainer width="100%" height="100%">
@@ -369,6 +385,62 @@ export default function Family() {
             </ResponsiveContainer>
           </div>
         </div>
+      </div>
+
+      {/* Shared Family Goals */}
+      <div className="glass-card p-6">
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-2">
+            <Target className="w-6 h-6 text-accent-500" />
+            <h3 className="text-lg font-medium text-text-primary">Shared Family Goals</h3>
+          </div>
+          <button
+            onClick={() => navigate('/goals')}
+            className="btn-primary py-1.5 px-3 text-xs flex items-center gap-1.5"
+          >
+            <Plus className="w-4 h-4" />
+            Create / Manage Goals
+          </button>
+        </div>
+        
+        {sharedGoals.length === 0 ? (
+          <div className="text-center py-8 text-text-muted text-sm border border-dashed border-border rounded-lg">
+            No shared family goals. You can create shared goals from the Goals page.
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {sharedGoals.map(g => (
+              <div key={g.id} className="bg-surface-hover border border-border p-5 rounded-xl space-y-4">
+                <div className="flex justify-between items-start">
+                  <div>
+                    <h4 className="text-md font-bold text-text-primary">{g.name}</h4>
+                    {g.targetDate && (
+                      <p className="text-xs text-text-secondary mt-0.5">
+                        Target Date: {new Date(g.targetDate).toLocaleDateString('en-IN', { month: 'short', year: 'numeric' })}
+                      </p>
+                    )}
+                  </div>
+                  <span className="text-xs font-bold text-accent-500 bg-accent-500/10 px-2.5 py-1 rounded-full">
+                    {g.progressPercentage.toFixed(1)}% Completed
+                  </span>
+                </div>
+                
+                <div className="space-y-1.5">
+                  <div className="flex justify-between text-xs font-medium">
+                    <span className="text-text-secondary">Saved: {formatCurrency(g.currentSavedAmount)}</span>
+                    <span className="text-accent-500">Target: {formatCurrency(g.targetAmount)}</span>
+                  </div>
+                  <div className="w-full h-2 bg-surface rounded-full overflow-hidden border border-border">
+                    <div 
+                      className="h-full bg-accent-500 rounded-full transition-all duration-500" 
+                      style={{ width: `${Math.min(100, g.progressPercentage)}%` }} 
+                    />
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -477,9 +549,34 @@ export default function Family() {
                 <div>
                   <p className="text-sm font-medium">{member.name}</p>
                   <p className="text-xs text-text-muted">{member.email}</p>
+                  <p className="text-[10px] text-text-secondary mt-0.5">Role: <span className="font-semibold uppercase text-accent-500">{member.familyRole || 'EDITOR'}</span></p>
                 </div>
-                {member.id === family.creatorId && (
-                  <span className="text-[10px] uppercase tracking-wider bg-accent-500/10 text-accent-500 px-2 py-1 rounded">Admin</span>
+                {member.id === user?.id ? (
+                  <span className="text-[10px] uppercase tracking-wider bg-accent-500/10 text-accent-500 px-2 py-1 rounded font-semibold">
+                    {member.familyRole || (isCreator ? 'OWNER' : 'EDITOR')} (You)
+                  </span>
+                ) : isOwner ? (
+                  <select
+                    value={member.familyRole || 'EDITOR'}
+                    onChange={async (e) => {
+                      const newRole = e.target.value;
+                      try {
+                        await updateFamilyRole(member.id, newRole);
+                        queryClient.invalidateQueries({ queryKey: ['family', 'me'] });
+                        alert('Role updated successfully.');
+                      } catch (err) {
+                        alert('Failed to update role.');
+                      }
+                    }}
+                    className="bg-surface border border-border text-text-primary rounded px-2 py-1 text-xs focus:outline-none hover:border-accent-500/50"
+                  >
+                    <option value="EDITOR">Editor</option>
+                    <option value="VIEWER">Viewer</option>
+                  </select>
+                ) : (
+                  <span className="text-[10px] uppercase tracking-wider bg-surface-hover border border-border text-text-secondary px-2 py-1 rounded">
+                    {member.familyRole || 'EDITOR'}
+                  </span>
                 )}
               </div>
             ))}
@@ -538,6 +635,56 @@ export default function Family() {
             </div>
           </div>
         </div>
+      </div>
+
+      {/* Family Audit Trail */}
+      <div className="glass-card p-6">
+        <h3 className="text-lg font-medium mb-4 flex items-center gap-2 text-text-primary">
+          <Users className="w-5 h-5 text-accent-500" />
+          Family Audit Trail
+        </h3>
+        
+        {!auditLogs || auditLogs.length === 0 ? (
+          <div className="text-center py-6 text-text-muted text-sm border border-dashed border-border rounded-lg">
+            No activities logged yet.
+          </div>
+        ) : (
+          <div className="overflow-x-auto border border-border rounded-lg max-h-[300px] overflow-y-auto">
+            <table className="w-full text-left border-collapse text-xs">
+              <thead>
+                <tr className="bg-surface-hover border-b border-border text-text-secondary font-medium">
+                  <th className="p-3">Timestamp</th>
+                  <th className="p-3">User</th>
+                  <th className="p-3">Action</th>
+                  <th className="p-3">Target</th>
+                  <th className="p-3">Details</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-border bg-surface-main">
+                {auditLogs.map((log: AuditLog) => (
+                  <tr key={log.id} className="hover:bg-surface-hover/50 text-text-secondary">
+                    <td className="p-3 whitespace-nowrap">{new Date(log.timestamp).toLocaleString('en-IN', { dateStyle: 'short', timeStyle: 'short' })}</td>
+                    <td className="p-3">
+                      <p className="font-semibold text-text-primary">{log.userName}</p>
+                      <p className="text-[10px] opacity-75">{log.userEmail}</p>
+                    </td>
+                    <td className="p-3">
+                      <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${
+                        log.action.startsWith('ADD') ? 'bg-emerald-500/10 text-emerald-400' :
+                        log.action.startsWith('UPDATE') ? 'bg-blue-500/10 text-blue-400' :
+                        'bg-red-500/10 text-red-400'
+                      }`}>
+                        {log.action}
+                      </span>
+                    </td>
+                    <td className="p-3 font-semibold">{log.targetType}</td>
+                    <td className="p-3 max-w-xs truncate" title={log.details}>{log.details || '-'}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
     </div>
   );

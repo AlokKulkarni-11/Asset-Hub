@@ -34,5 +34,8 @@ public class FixedDepositRequest {
     @NotNull(message = "Compounding frequency is required")
     private CompoundingFrequency compoundingFrequency;
     
+    private String currency;
     private String notes;
+    private String nomineeName;
+    private String nomineeRelationship;
 }

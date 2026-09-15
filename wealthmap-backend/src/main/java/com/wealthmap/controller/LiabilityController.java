@@ -17,13 +17,16 @@ import java.util.List;
 public class LiabilityController {
 
     private final LiabilityService liabilityService;
+    private final com.wealthmap.service.AuditLogService auditLogService;
 
     @PostMapping
     public ResponseEntity<LiabilityResponse> addLiability(
             @Valid @RequestBody LiabilityRequest request,
             Authentication authentication) {
         String userEmail = authentication.getName();
-        return ResponseEntity.ok(liabilityService.addLiability(request, userEmail));
+        LiabilityResponse response = liabilityService.addLiability(request, userEmail);
+        auditLogService.log(userEmail, "ADD_LIABILITY", "LIABILITY", response.getId(), "Added liability: " + request.getName());
+        return ResponseEntity.ok(response);
     }
 
     @PutMapping("/{id}")
@@ -32,7 +35,9 @@ public class LiabilityController {
             @Valid @RequestBody LiabilityRequest request,
             Authentication authentication) {
         String userEmail = authentication.getName();
-        return ResponseEntity.ok(liabilityService.updateLiability(id, request, userEmail));
+        LiabilityResponse response = liabilityService.updateLiability(id, request, userEmail);
+        auditLogService.log(userEmail, "UPDATE_LIABILITY", "LIABILITY", response.getId(), "Updated liability: " + request.getName());
+        return ResponseEntity.ok(response);
     }
 
     @GetMapping
@@ -51,6 +56,7 @@ public class LiabilityController {
     public ResponseEntity<Void> deleteLiability(@PathVariable Long id, Authentication authentication) {
         String userEmail = authentication.getName();
         liabilityService.deleteLiability(id, userEmail);
+        auditLogService.log(userEmail, "DELETE_LIABILITY", "LIABILITY", id, "Deleted liability ID: " + id);
         return ResponseEntity.ok().build();
     }
 }

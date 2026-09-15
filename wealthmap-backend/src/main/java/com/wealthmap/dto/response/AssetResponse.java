@@ -19,9 +19,19 @@ public class AssetResponse {
     private BigDecimal gainLoss;
     private BigDecimal gainPercent;
 
+    // Multi-Currency / Forex fields
+    private String currency;
+    private BigDecimal exchangeRate;
+    private BigDecimal originalInvestedAmount;
+    private BigDecimal originalCurrentValue;
+
     // Optional fixed-income fields
     private LocalDate maturityDate;
     private LocalDate startDate;
     private BigDecimal interestRate;
     private String bankName;
+
+    // Nominee fields
+    private String nomineeName;
+    private String nomineeRelationship;
 }

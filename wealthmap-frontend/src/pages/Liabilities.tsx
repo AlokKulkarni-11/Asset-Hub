@@ -1,24 +1,51 @@
 // @ts-nocheck
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { Plus, Home, User, GraduationCap, CreditCard, Car, HelpCircle, ChevronDown, ChevronUp, Edit2, Trash2, Calendar, DollarSign, Calculator } from 'lucide-react';
+import { Plus, Home, User, GraduationCap, CreditCard, Car, HelpCircle, ChevronDown, ChevronUp, Edit2, Trash2, Calendar, Calculator, HardDrive, FileText } from 'lucide-react';
 import { getAllLiabilities, deleteLiability } from '../api/liabilities.api';
 import type { LiabilityResponse } from '../api/liabilities.api';
 import LiabilitySelectorModal from '../components/forms/LiabilitySelectorModal';
 import AddLiabilityForm from '../components/forms/AddLiabilityForm';
 import ConfirmDialog from '../components/ui/ConfirmDialog';
+import { getMyFamily } from '../api/family.api';
+import { DocumentVaultModal } from '../components/documents/DocumentVaultModal';
 
 export default function Liabilities() {
+  const location = useLocation();
+  const navigate = useNavigate();
+
   const [showSelectorModal, setShowSelectorModal] = useState(false);
   const [menuOpenId, setMenuOpenId] = useState<number | null>(null);
   const [editingLiability, setEditingLiability] = useState<LiabilityResponse | null>(null);
   const [liabilityToDelete, setLiabilityToDelete] = useState<number | null>(null);
+  const [selectedLiabilityForDocs, setSelectedLiabilityForDocs] = useState<{ id?: number; name?: string } | null>(null);
+  const [isVaultOpen, setIsVaultOpen] = useState(false);
   
   // Accordion & Amortization View State
   const [expandedCategory, setExpandedCategory] = useState<string | null>(null);
   const [amortizationViewId, setAmortizationViewId] = useState<number | null>(null);
   
   const queryClient = useQueryClient();
+
+  useEffect(() => {
+    if (location.state?.parsedLiability) {
+      const parsed = location.state.parsedLiability;
+      const fields = parsed.fields || {};
+      const lType = parsed.liabilityType || fields.liabilityType || 'PERSONAL_LOAN';
+      setEditingLiability({
+        ...parsed,
+        ...fields,
+        liabilityType: lType,
+      } as unknown as LiabilityResponse);
+      navigate(location.pathname, { replace: true, state: {} });
+    }
+  }, [location.state, navigate, location.pathname]);
+
+  const { data: family } = useQuery({
+    queryKey: ['family', 'me'],
+    queryFn: getMyFamily,
+  });
 
   const { data: allLiabilities, isLoading } = useQuery({
     queryKey: ['liabilities', 'all'],
@@ -133,13 +160,24 @@ export default function Liabilities() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-heading">Your Liabilities</h1>
-        <button 
-          onClick={() => setShowSelectorModal(true)}
-          className="btn-primary bg-red-500 hover:bg-red-600 border-red-500"
-        >
-          <Plus className="w-5 h-5" />
-          Add Liability
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setIsVaultOpen(true)}
+            className="flex items-center space-x-1.5 px-3 py-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 rounded-xl text-xs font-semibold shadow-sm transition-colors"
+          >
+            <HardDrive className="w-4 h-4 text-indigo-600" />
+            <span>Document Vault</span>
+          </button>
+          {family?.currentUserRole !== 'VIEWER' && (
+            <button 
+              onClick={() => setShowSelectorModal(true)}
+              className="btn-primary bg-red-500 hover:bg-red-600 border-red-500"
+            >
+              <Plus className="w-5 h-5" />
+              Add Liability
+            </button>
+          )}
+        </div>
       </div>
 
       {showSelectorModal && (
@@ -213,17 +251,30 @@ export default function Liabilities() {
 
                             <div className="flex items-center gap-2">
                               <button 
-                                onClick={() => setEditingLiability(item)}
-                                className="p-2 text-text-secondary hover:text-text-primary rounded-lg hover:bg-surface-hover transition-colors"
+                                onClick={() => setSelectedLiabilityForDocs({ id: item.id, name: item.name })}
+                                className="p-2 text-indigo-600 hover:text-indigo-700 rounded-lg hover:bg-indigo-50 border border-indigo-100 transition-colors flex items-center space-x-1 text-xs font-medium"
+                                title="Attached documents & sanction letters"
                               >
-                                <Edit2 className="w-4 h-4" />
+                                <FileText className="w-3.5 h-3.5" />
+                                <span>Docs</span>
                               </button>
-                              <button 
-                                onClick={() => setLiabilityToDelete(item.id)}
-                                className="p-2 text-red-500 hover:text-red-600 rounded-lg hover:bg-red-500/10 transition-colors"
-                              >
-                                <Trash2 className="w-4 h-4" />
-                              </button>
+
+                              {family?.currentUserRole !== 'VIEWER' && (
+                                <>
+                                  <button 
+                                    onClick={() => setEditingLiability(item)}
+                                    className="p-2 text-text-secondary hover:text-text-primary rounded-lg hover:bg-surface-hover transition-colors"
+                                  >
+                                    <Edit2 className="w-4 h-4" />
+                                  </button>
+                                  <button 
+                                    onClick={() => setLiabilityToDelete(item.id)}
+                                    className="p-2 text-red-500 hover:text-red-600 rounded-lg hover:bg-red-500/10 transition-colors"
+                                  >
+                                    <Trash2 className="w-4 h-4" />
+                                  </button>
+                                </>
+                              )}
                             </div>
                           </div>
 
@@ -328,6 +379,16 @@ export default function Liabilities() {
           onCancel={() => setLiabilityToDelete(null)} 
         />
       )}
+
+      <DocumentVaultModal
+        isOpen={isVaultOpen || !!selectedLiabilityForDocs}
+        onClose={() => {
+          setIsVaultOpen(false);
+          setSelectedLiabilityForDocs(null);
+        }}
+        liabilityId={selectedLiabilityForDocs?.id}
+        liabilityName={selectedLiabilityForDocs?.name}
+      />
     </div>
   );
 }

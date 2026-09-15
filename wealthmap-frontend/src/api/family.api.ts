@@ -4,6 +4,7 @@ export interface MemberResponse {
   id: number;
   name: string;
   email: string;
+  familyRole?: string;
 }
 
 export interface FamilyDetailsResponse {
@@ -11,6 +12,7 @@ export interface FamilyDetailsResponse {
   name: string;
   inviteCode: string;
   creatorId: number;
+  currentUserRole?: string;
   members: MemberResponse[];
 }
 
@@ -77,5 +79,26 @@ export const getFamilyAssets = async (): Promise<any[]> => {
 
 export const getFamilyRollup = async (): Promise<FamilyRollupResponse> => {
   const response = await api.get('/family/rollup');
+  return response.data;
+};
+
+export const updateFamilyRole = async (userId: number, role: string): Promise<string> => {
+  const response = await api.post('/family/update-role', { userId, role });
+  return response.data;
+};
+
+export interface AuditLog {
+  id: number;
+  userEmail: string;
+  userName: string;
+  action: string;
+  targetType: string;
+  targetId?: number;
+  details?: string;
+  timestamp: string;
+}
+
+export const getAuditLogs = async (): Promise<AuditLog[]> => {
+  const response = await api.get('/audit-logs');
   return response.data;
 };

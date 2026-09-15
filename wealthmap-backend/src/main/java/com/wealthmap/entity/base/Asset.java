@@ -29,6 +29,12 @@ public abstract class Asset {
     
     private String notes;
 
+    @Column(name = "nominee_name")
+    private String nomineeName;
+
+    @Column(name = "nominee_relationship")
+    private String nomineeRelationship;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
@@ -46,6 +52,9 @@ public abstract class Asset {
 
     @UpdateTimestamp
     private LocalDateTime updatedAt;
+
+    @Column(name = "currency", length = 10)
+    private String currency = "INR";
 
     public abstract BigDecimal getInvestedAmount();
 }

@@ -19,6 +19,7 @@ import java.util.List;
 public class MarketController {
 
     private final StockService stockService;
+    private final com.wealthmap.service.AuditLogService auditLogService;
 
     @PostMapping
     public ResponseEntity<AssetResponse> addStock(
@@ -27,6 +28,7 @@ public class MarketController {
         
         String userEmail = authentication.getName();
         AssetResponse response = stockService.addStock(request, userEmail);
+        auditLogService.log(userEmail, "ADD_ASSET", "STOCK", response.getId(), "Added stock asset: " + request.getQuantity() + " shares of " + request.getTicker());
         return ResponseEntity.ok(response);
     }
 
@@ -57,6 +59,7 @@ public class MarketController {
             Authentication authentication) {
         String userEmail = authentication.getName();
         StockResponse response = stockService.updateStock(id, request, userEmail);
+        auditLogService.log(userEmail, "UPDATE_ASSET", "STOCK", response.getId(), "Updated stock asset quantity to " + request.getQuantity() + " shares of " + request.getTicker());
         return ResponseEntity.ok(response);
     }
 }

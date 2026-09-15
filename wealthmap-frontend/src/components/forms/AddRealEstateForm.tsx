@@ -6,13 +6,18 @@ import { X, Loader2 } from 'lucide-react';
 import { addRealEstate, updateRealEstate, getRealEstateAsset } from '../../api/assets.api';
 import { useQueryClient, useQuery } from '@tanstack/react-query';
 
+import CurrencySelect, { getCurrencySymbol } from '../ui/CurrencySelect';
+
 const addRealEstateSchema = z.object({
   propertyName: z.string().min(1, 'Property Name is required'),
   propertyType: z.string().min(1, 'Property Type is required'),
   purchasePrice: z.coerce.number().min(1, 'Purchase Price must be > 0'),
   estimatedCurrentValue: z.coerce.number().min(1, 'Current Value must be > 0'),
   purchaseDate: z.string().min(1, 'Purchase date is required'),
+  currency: z.string().default('INR'),
   notes: z.string().optional(),
+  nomineeName: z.string().optional(),
+  nomineeRelationship: z.string().optional(),
 });
 
 type AddRealEstateFormInputs = z.infer<typeof addRealEstateSchema>;
@@ -23,12 +28,15 @@ interface Props {
 }
 
 export default function AddRealEstateForm({ onClose, initialData }: Props) {
-  const { register, handleSubmit, reset, formState: { errors } } = useForm<AddRealEstateFormInputs>({
+  const { register, handleSubmit, reset, watch, setValue, formState: { errors } } = useForm<AddRealEstateFormInputs>({
     resolver: zodResolver(addRealEstateSchema) as any,
     defaultValues: {
-      propertyType: 'Residential'
+      propertyType: 'Residential',
+      currency: 'INR'
     }
   });
+
+  const selectedCurrency = watch('currency') || 'INR';
 
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -47,13 +55,20 @@ export default function AddRealEstateForm({ onClose, initialData }: Props) {
         }
       }
 
+      const pName = initialData.propertyName || initialData.name || initialData.propertyAddress || 'Real Estate Property';
+      const pPrice = initialData.purchasePrice || initialData.originalInvestedAmount || initialData.investedAmount || initialData.estimatedCurrentValue || initialData.currentValue || 1000000;
+      const curVal = initialData.estimatedCurrentValue || initialData.originalCurrentValue || initialData.currentValue || pPrice;
+
       reset({
-        propertyName: initialData.propertyName || '',
+        propertyName: pName,
         propertyType: initialData.propertyType || 'Residential',
-        purchasePrice: initialData.purchasePrice || 0,
-        estimatedCurrentValue: initialData.estimatedCurrentValue || 0,
-        purchaseDate: formattedDate,
+        purchasePrice: pPrice,
+        estimatedCurrentValue: curVal,
+        purchaseDate: formattedDate || new Date().toISOString().split('T')[0],
+        currency: initialData.currency || 'INR',
         notes: initialData.notes || '',
+        nomineeName: initialData.nomineeName || '',
+        nomineeRelationship: initialData.nomineeRelationship || '',
       });
     }
   }, [initialData, reset]);
@@ -99,13 +114,15 @@ export default function AddRealEstateForm({ onClose, initialData }: Props) {
   };
 
   return (
-    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 pb-20 md:pb-4">
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 relative border-2 border-sky-500 overflow-y-auto max-h-[70vh] md:max-h-[85vh]">
+    <div className="fixed inset-0 bg-slate-900/60 z-50 flex items-center justify-center p-4 pb-20 md:pb-4">
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 relative border border-slate-200 overflow-y-auto max-h-[70vh] md:max-h-[85vh]">
         <button onClick={onClose} className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition-colors">
           <X className="w-5 h-5" />
         </button>
         
-        <h2 className="text-xl font-semibold mb-6 text-gray-900">Add Real Estate</h2>
+        <h2 className="text-xl font-semibold mb-6 text-gray-900">
+          {initialData?.id ? 'Edit Real Estate' : 'Add Real Estate'}
+        </h2>
 
         {error && (
           <div className="bg-red-50 border border-red-200 text-red-700 p-3 rounded-lg mb-4 text-sm">
@@ -116,7 +133,7 @@ export default function AddRealEstateForm({ onClose, initialData }: Props) {
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Property Name or Address</label>
-            <input {...register('propertyName')} type="text" placeholder="e.g. 3BHK Apartment in Mumbai" className="glass-input" />
+            <input {...register('propertyName')} type="text" placeholder="e.g. 2BHK Apartment in Dubai / 3BHK Mumbai" className="glass-input" />
             {errors.propertyName && <p className="text-red-600 text-xs mt-1 font-medium">{errors.propertyName.message}</p>}
           </div>
 
@@ -130,14 +147,25 @@ export default function AddRealEstateForm({ onClose, initialData }: Props) {
             {errors.propertyType && <p className="text-red-600 text-xs mt-1 font-medium">{errors.propertyType.message}</p>}
           </div>
 
+          {/* Multi-Currency Selector */}
+          <CurrencySelect
+            value={selectedCurrency}
+            onChange={(code) => setValue('currency', code, { shouldValidate: true })}
+            label="Property Currency"
+          />
+
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Purchase Price (₹)</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Purchase Price ({getCurrencySymbol(selectedCurrency)})
+              </label>
               <input {...register('purchasePrice')} type="number" className="glass-input" />
               {errors.purchasePrice && <p className="text-red-600 text-xs mt-1 font-medium">{errors.purchasePrice.message}</p>}
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Est. Current Value (₹)</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Est. Current Value ({getCurrencySymbol(selectedCurrency)})
+              </label>
               <input {...register('estimatedCurrentValue')} type="number" className="glass-input" />
               {errors.estimatedCurrentValue && <p className="text-red-600 text-xs mt-1 font-medium">{errors.estimatedCurrentValue.message}</p>}
             </div>
@@ -152,6 +180,24 @@ export default function AddRealEstateForm({ onClose, initialData }: Props) {
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Notes (Optional)</label>
             <textarea {...register('notes')} className="glass-input resize-none" rows={2}></textarea>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4 border-t border-gray-100 pt-3">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Nominee Name</label>
+              <input {...register('nomineeName')} type="text" placeholder="Optional" className="glass-input" />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Relationship</label>
+              <select {...register('nomineeRelationship')} className="glass-input">
+                <option value="">None / Select</option>
+                <option value="Spouse">Spouse</option>
+                <option value="Child">Child</option>
+                <option value="Parent">Parent</option>
+                <option value="Sibling">Sibling</option>
+                <option value="Other">Other</option>
+              </select>
+            </div>
           </div>
 
           <button type="submit" disabled={loading} className="btn-primary w-full mt-4">

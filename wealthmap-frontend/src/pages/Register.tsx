@@ -117,6 +117,12 @@ export default function Register() {
             Sign In
           </Link>
         </div>
+
+        <div className="mt-4 text-center text-xs text-text-muted">
+          <Link to="/privacy" className="hover:text-text-secondary transition-colors underline">
+            Privacy Policy & Data Security
+          </Link>
+        </div>
       </div>
     </div>
   );

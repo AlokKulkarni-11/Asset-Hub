@@ -11,5 +11,8 @@ public class RealEstateRequest {
     private BigDecimal purchasePrice;
     private BigDecimal estimatedCurrentValue;
     private LocalDate purchaseDate;
+    private String currency;
     private String notes;
+    private String nomineeName;
+    private String nomineeRelationship;
 }

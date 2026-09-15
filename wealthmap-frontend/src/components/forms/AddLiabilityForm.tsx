@@ -6,6 +6,7 @@ import { z } from 'zod';
 import { X, Loader2 } from 'lucide-react';
 import { addLiability, updateLiability } from '../../api/liabilities.api';
 import { useQueryClient } from '@tanstack/react-query';
+import { DocumentUploadAiParser } from '../documents/DocumentUploadAiParser';
 
 const liabilitySchema = z.object({
   name: z.string().min(1, 'Name is required'),
@@ -38,9 +39,9 @@ interface Props {
 }
 
 export default function AddLiabilityForm({ type, onClose, initialData }: Props) {
-  const liabilityType = type || initialData?.liabilityType;
+  const liabilityType = type || initialData?.liabilityType || 'PERSONAL_LOAN';
 
-  const { register, handleSubmit, reset, formState: { errors } } = useForm<any>({
+  const { register, handleSubmit, reset, setValue, formState: { errors } } = useForm<any>({
     resolver: zodResolver(liabilitySchema),
     defaultValues: {
       liabilityType: liabilityType,
@@ -62,27 +63,37 @@ export default function AddLiabilityForm({ type, onClose, initialData }: Props) 
         return dateVal.toString().split('T')[0];
       };
 
+      const lender = initialData.lenderName || initialData.bankName || initialData.institutionName || '';
+      const lType = initialData.liabilityType || type || 'PERSONAL_LOAN';
+      const defaultName = lender ? `${lender} Loan` : (lType ? lType.toLowerCase().replace(/_/g, ' ') : 'Loan');
+      const nameVal = initialData.name || defaultName;
+      const principal = initialData.principalAmount || initialData.originalAmount || initialData.amount || initialData.loanAmount || initialData.purchasePrice || initialData.investedAmount || 100000;
+      const outstanding = initialData.outstandingBalance !== undefined ? initialData.outstandingBalance : principal;
+      const rate = initialData.interestRate || initialData.interestRatePct || 8.5;
+      const tenure = initialData.tenureMonths || (initialData.tenureYears ? initialData.tenureYears * 12 : 60);
+      const emiVal = initialData.emi || initialData.monthlyEmi;
+
       reset({
-        name: initialData.name,
-        liabilityType: initialData.liabilityType,
-        principalAmount: initialData.principalAmount,
-        interestRate: initialData.interestRate,
-        tenureMonths: initialData.tenureMonths,
-        outstandingBalance: initialData.outstandingBalance,
-        emi: initialData.emi,
-        startDate: formatDate(initialData.startDate),
+        name: nameVal,
+        liabilityType: lType,
+        principalAmount: principal,
+        interestRate: rate,
+        tenureMonths: tenure,
+        outstandingBalance: outstanding,
+        emi: emiVal,
+        startDate: formatDate(initialData.startDate || initialData.purchaseDate) || new Date().toISOString().split('T')[0],
         notes: initialData.notes || '',
-        lenderName: initialData.lenderName || '',
+        lenderName: lender,
         propertyAddress: initialData.propertyAddress || '',
         purpose: initialData.purpose || '',
-        institutionName: initialData.institutionName || '',
-        cardIssuer: initialData.cardIssuer || '',
+        institutionName: initialData.institutionName || lender,
+        cardIssuer: initialData.cardIssuer || lender,
         lastFourDigits: initialData.lastFourDigits || '',
         vehicleModel: initialData.vehicleModel || '',
         descriptionDetail: initialData.descriptionDetail || '',
       });
     }
-  }, [initialData, reset]);
+  }, [initialData, reset, type]);
 
   const onSubmit = async (data: LiabilityFormInputs) => {
     try {
@@ -117,15 +128,35 @@ export default function AddLiabilityForm({ type, onClose, initialData }: Props) 
   };
 
   return (
-    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 pb-20 md:pb-4">
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 relative border-2 border-sky-500 overflow-y-auto max-h-[70vh] md:max-h-[85vh]">
+    <div className="fixed inset-0 bg-slate-900/60 z-50 flex items-center justify-center p-4 pb-20 md:pb-4">
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 relative border border-slate-200 overflow-y-auto max-h-[70vh] md:max-h-[85vh]">
         <button onClick={onClose} className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition-colors">
           <X className="w-5 h-5" />
         </button>
         
-        <h2 className="text-xl font-semibold mb-6 text-gray-900 capitalize">
+        <h2 className="text-xl font-semibold mb-4 text-gray-900 capitalize">
           {initialData?.id ? `Edit ${getTypeName(liabilityType)}` : `Add ${getTypeName(liabilityType)}`}
         </h2>
+
+        {!initialData?.id && (
+          <DocumentUploadAiParser
+            assetType="LIABILITY"
+            onExtracted={(extracted) => {
+              if (extracted.name) setValue('name', extracted.name);
+              if (extracted.lenderName || extracted.bankName) setValue('lenderName', extracted.lenderName || extracted.bankName);
+              if (extracted.principalAmount || extracted.originalAmount || extracted.amount) {
+                setValue('principalAmount', extracted.principalAmount || extracted.originalAmount || extracted.amount);
+                if (!extracted.outstandingBalance) setValue('outstandingBalance', extracted.principalAmount || extracted.originalAmount || extracted.amount);
+              }
+              if (extracted.outstandingBalance) setValue('outstandingBalance', extracted.outstandingBalance);
+              if (extracted.interestRate) setValue('interestRate', extracted.interestRate);
+              if (extracted.tenureMonths) setValue('tenureMonths', extracted.tenureMonths);
+              if (extracted.monthlyEmi || extracted.emi) setValue('emi', extracted.monthlyEmi || extracted.emi);
+              if (extracted.startDate) setValue('startDate', extracted.startDate);
+            }}
+            className="mb-4"
+          />
+        )}
 
         {error && (
           <div className="bg-red-50 border border-red-200 text-red-700 p-3 rounded-lg mb-4 text-sm">

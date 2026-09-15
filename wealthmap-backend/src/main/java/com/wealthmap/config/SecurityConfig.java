@@ -38,6 +38,10 @@ public class SecurityConfig {
                 .csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/auth/**").permitAll()
+                        .requestMatchers("/error").permitAll()
+                        .requestMatchers(org.springframework.http.HttpMethod.POST, "/api/assets/**", "/api/liabilities/**", "/api/goals/**").hasAnyAuthority("ROLE_FAMILY_OWNER", "ROLE_FAMILY_EDITOR")
+                        .requestMatchers(org.springframework.http.HttpMethod.PUT, "/api/assets/**", "/api/liabilities/**", "/api/goals/**").hasAnyAuthority("ROLE_FAMILY_OWNER", "ROLE_FAMILY_EDITOR")
+                        .requestMatchers(org.springframework.http.HttpMethod.DELETE, "/api/assets/**", "/api/liabilities/**", "/api/goals/**").hasAnyAuthority("ROLE_FAMILY_OWNER", "ROLE_FAMILY_EDITOR")
                         .anyRequest().authenticated()
                 )
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))

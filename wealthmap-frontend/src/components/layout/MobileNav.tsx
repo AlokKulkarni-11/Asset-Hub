@@ -13,7 +13,7 @@ export default function MobileNav() {
   ];
 
   return (
-    <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-surface backdrop-blur-xl border-t border-border z-50 px-2 pb-safe pt-2">
+    <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 shadow-md z-50 px-2 pb-safe pt-2">
       <div className="flex justify-around items-center">
         {navItems.map((item) => (
           <NavLink

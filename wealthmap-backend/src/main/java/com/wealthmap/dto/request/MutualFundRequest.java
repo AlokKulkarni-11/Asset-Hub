@@ -12,5 +12,8 @@ public class MutualFundRequest {
     private BigDecimal units;
     private BigDecimal averageNav;
     private LocalDate purchaseDate;
+    private String currency;
     private String notes;
+    private String nomineeName;
+    private String nomineeRelationship;
 }

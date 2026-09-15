@@ -3,18 +3,21 @@ package com.wealthmap.service.price;
 import com.wealthmap.entity.GoldItem;
 import com.wealthmap.entity.base.Asset;
 import com.wealthmap.enums.AssetType;
+import com.wealthmap.service.CurrencyConversionService;
+import lombok.RequiredArgsConstructor;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
-import java.util.Map;
 
 @Service
+@RequiredArgsConstructor
 public class GoldPriceProvider implements PriceProvider {
 
     private final RestTemplate restTemplate = new RestTemplate();
+    private final CurrencyConversionService currencyConversionService;
 
     @Override
     public boolean supports(AssetType type) {
@@ -52,14 +55,11 @@ public class GoldPriceProvider implements PriceProvider {
             com.fasterxml.jackson.databind.JsonNode goldNode = mapper.readTree(goldResp);
             double usdPerOunce = goldNode.path("chart").path("result").get(0).path("meta").path("regularMarketPrice").asDouble();
             
-            // Get USD to INR rate
-            String inrUrl = "https://query2.finance.yahoo.com/v8/finance/chart/INR=X";
-            String inrResp = restTemplate.exchange(inrUrl, org.springframework.http.HttpMethod.GET, entity, String.class).getBody();
-            com.fasterxml.jackson.databind.JsonNode inrNode = mapper.readTree(inrResp);
-            double usdToInr = inrNode.path("chart").path("result").get(0).path("meta").path("regularMarketPrice").asDouble();
+            // Get live USD to INR rate via CurrencyConversionService
+            BigDecimal usdToInr = currencyConversionService.getExchangeRate("USD", "INR");
             
             // Convert to INR per Gram (1 Troy Ounce = 31.1034768 grams)
-            double inrPerOunce = usdPerOunce * usdToInr;
+            double inrPerOunce = usdPerOunce * usdToInr.doubleValue();
             double inrPerGram = inrPerOunce / 31.1034768;
             
             // Add 15% to simulate Indian domestic physical gold price (import duty + premium)

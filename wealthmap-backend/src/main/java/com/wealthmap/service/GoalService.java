@@ -40,6 +40,10 @@ public class GoalService {
             goal.setTaggedAssetIds(request.getTaggedAssetIds());
         }
 
+        if (request.isShared() && user.getFamilyGroup() != null) {
+            goal.setFamilyGroup(user.getFamilyGroup());
+        }
+
         FinancialGoal saved = goalRepository.save(goal);
         return mapToResponse(saved, userEmail);
     }
@@ -52,8 +56,17 @@ public class GoalService {
         FinancialGoal goal = goalRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Goal not found"));
 
-        if (!goal.getUser().getId().equals(user.getId())) {
-            throw new RuntimeException("Access Denied");
+        if (goal.getFamilyGroup() != null) {
+            if (user.getFamilyGroup() == null || !goal.getFamilyGroup().getId().equals(user.getFamilyGroup().getId())) {
+                throw new RuntimeException("Access Denied");
+            }
+            if (user.getFamilyRole() == com.wealthmap.enums.FamilyRole.VIEWER) {
+                throw new RuntimeException("Access Denied: Viewers cannot modify goals");
+            }
+        } else {
+            if (!goal.getUser().getId().equals(user.getId())) {
+                throw new RuntimeException("Access Denied");
+            }
         }
 
         goal.setName(request.getName());
@@ -62,6 +75,12 @@ public class GoalService {
         goal.setNotes(request.getNotes());
         if (request.getTaggedAssetIds() != null) {
             goal.setTaggedAssetIds(request.getTaggedAssetIds());
+        }
+
+        if (request.isShared() && user.getFamilyGroup() != null) {
+            goal.setFamilyGroup(user.getFamilyGroup());
+        } else {
+            goal.setFamilyGroup(null);
         }
 
         FinancialGoal saved = goalRepository.save(goal);
@@ -73,8 +92,14 @@ public class GoalService {
         User user = userRepository.findByEmail(userEmail)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
-        return goalRepository.findByUserId(user.getId())
-                .stream()
+        List<FinancialGoal> goals;
+        if (user.getFamilyGroup() != null) {
+            goals = goalRepository.findByUserIdOrFamilyGroupId(user.getId(), user.getFamilyGroup().getId());
+        } else {
+            goals = goalRepository.findByUserId(user.getId());
+        }
+
+        return goals.stream()
                 .map(g -> mapToResponse(g, userEmail))
                 .collect(Collectors.toList());
     }
@@ -87,8 +112,17 @@ public class GoalService {
         FinancialGoal goal = goalRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Goal not found"));
 
-        if (!goal.getUser().getId().equals(user.getId())) {
-            throw new RuntimeException("Access Denied");
+        if (goal.getFamilyGroup() != null) {
+            if (user.getFamilyGroup() == null || !goal.getFamilyGroup().getId().equals(user.getFamilyGroup().getId())) {
+                throw new RuntimeException("Access Denied");
+            }
+            if (user.getFamilyRole() == com.wealthmap.enums.FamilyRole.VIEWER) {
+                throw new RuntimeException("Access Denied: Viewers cannot delete goals");
+            }
+        } else {
+            if (!goal.getUser().getId().equals(user.getId())) {
+                throw new RuntimeException("Access Denied");
+            }
         }
 
         goalRepository.delete(goal);
@@ -102,9 +136,26 @@ public class GoalService {
         resp.setTargetDate(goal.getTargetDate());
         resp.setNotes(goal.getNotes());
         resp.setTaggedAssetIds(goal.getTaggedAssetIds());
+        resp.setShared(goal.getFamilyGroup() != null);
+        resp.setFamilyGroupId(goal.getFamilyGroup() != null ? goal.getFamilyGroup().getId() : null);
 
-        // Calculate saved amount from tagged assets
-        List<AssetResponse> allAssets = analyticsService.getAllAssetsForUser(userEmail);
+        // Calculate saved amount from tagged assets across user/family
+        List<AssetResponse> allAssets;
+        User user = userRepository.findByEmail(userEmail)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        if (goal.getFamilyGroup() != null) {
+            List<User> members = userRepository.findAll().stream()
+                    .filter(u -> u.getFamilyGroup() != null && u.getFamilyGroup().getId().equals(goal.getFamilyGroup().getId()))
+                    .collect(Collectors.toList());
+            allAssets = new java.util.ArrayList<>();
+            for (User member : members) {
+                allAssets.addAll(analyticsService.getAllAssetsForUser(member.getEmail()));
+            }
+        } else {
+            allAssets = analyticsService.getAllAssetsForUser(userEmail);
+        }
+
         Map<Long, BigDecimal> assetValueMap = allAssets.stream()
                 .collect(Collectors.toMap(AssetResponse::getId, a -> a.getCurrentValue() != null ? a.getCurrentValue() : BigDecimal.ZERO, (v1, v2) -> v1));
 

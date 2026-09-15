@@ -27,5 +27,8 @@ public class StockRequest {
     @DecimalMin(value = "0.01", message = "Buy price must be greater than 0")
     private BigDecimal averageBuyPrice;
     
+    private String currency;
     private String notes;
+    private String nomineeName;
+    private String nomineeRelationship;
 }

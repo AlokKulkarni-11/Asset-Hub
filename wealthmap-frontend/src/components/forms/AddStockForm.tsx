@@ -8,13 +8,18 @@ import { addStockAsset, updateStockAsset, getStockAsset, searchStocks } from '..
 import type { StockSearchResponse } from '../../api/assets.api';
 import { useQueryClient, useQuery } from '@tanstack/react-query';
 
+import CurrencySelect, { getCurrencySymbol } from '../ui/CurrencySelect';
+
 const addStockSchema = z.object({
   ticker: z.string().min(1, 'Ticker is required'),
   companyName: z.string().min(1, 'Company name is required'),
   purchaseDate: z.string().min(1, 'Purchase date is required'),
   quantity: z.coerce.number().min(0.01, 'Quantity must be > 0'),
   averageBuyPrice: z.coerce.number().min(0.01, 'Buy price must be > 0'),
+  currency: z.string().default('INR'),
   notes: z.string().optional(),
+  nomineeName: z.string().optional(),
+  nomineeRelationship: z.string().optional(),
 });
 
 type AddStockFormInputs = z.infer<typeof addStockSchema>;
@@ -27,7 +32,14 @@ interface Props {
 export default function AddStockForm({ onClose, initialData }: Props) {
   const { register, handleSubmit, setValue, reset, watch, formState: { errors } } = useForm<any>({
     resolver: zodResolver(addStockSchema),
+    defaultValues: {
+      currency: 'INR',
+    },
   });
+
+  const selectedCurrency = watch('currency') || 'INR';
+  const watchQty = watch('quantity') || 0;
+  const watchPrice = watch('averageBuyPrice') || 0;
 
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -52,15 +64,23 @@ export default function AddStockForm({ onClose, initialData }: Props) {
         }
       }
 
+      const tickerVal = initialData.ticker || initialData.symbol || initialData.companyName || initialData.name || '';
+      const companyVal = initialData.companyName || initialData.name || initialData.ticker || 'Equity Stock';
+      const qtyVal = initialData.quantity || initialData.units || initialData.quantityOrUnits || 1;
+      const priceVal = initialData.averageBuyPrice || initialData.averagePrice || initialData.purchasePrice || initialData.unitPrice || (initialData.originalInvestedAmount && qtyVal ? initialData.originalInvestedAmount / qtyVal : 100);
+
       reset({
-        ticker: initialData.ticker,
-        companyName: initialData.companyName || initialData.name,
-        purchaseDate: formattedDate,
-        quantity: initialData.quantity,
-        averageBuyPrice: initialData.averageBuyPrice || initialData.averagePrice,
+        ticker: tickerVal,
+        companyName: companyVal,
+        purchaseDate: formattedDate || new Date().toISOString().split('T')[0],
+        quantity: qtyVal,
+        averageBuyPrice: priceVal,
+        currency: initialData.currency || 'INR',
         notes: initialData.notes || '',
+        nomineeName: initialData.nomineeName || '',
+        nomineeRelationship: initialData.nomineeRelationship || '',
       });
-      setSearchQuery(initialData.ticker);
+      setSearchQuery(tickerVal);
     }
   }, [initialData, reset]);
 
@@ -90,6 +110,12 @@ export default function AddStockForm({ onClose, initialData }: Props) {
   const selectStock = (stock: StockSearchResponse) => {
     setValue('ticker', stock.symbol, { shouldValidate: true });
     setValue('companyName', stock.companyName, { shouldValidate: true });
+    // Auto-select USD if US ticker or foreign exchange
+    if (!stock.symbol.endsWith('.NS') && !stock.symbol.endsWith('.BO')) {
+      setValue('currency', 'USD', { shouldValidate: true });
+    } else {
+      setValue('currency', 'INR', { shouldValidate: true });
+    }
     setSearchQuery(stock.symbol);
     setShowDropdown(false);
   };
@@ -123,8 +149,8 @@ export default function AddStockForm({ onClose, initialData }: Props) {
   };
 
   return (
-    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 pb-20 md:pb-4">
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 relative border-2 border-sky-500 overflow-y-auto max-h-[70vh] md:max-h-[85vh]">
+    <div className="fixed inset-0 bg-slate-900/60 z-50 flex items-center justify-center p-4 pb-20 md:pb-4">
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 relative border border-slate-200 overflow-y-auto max-h-[70vh] md:max-h-[85vh]">
         <button onClick={onClose} className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition-colors">
           <X className="w-5 h-5" />
         </button>
@@ -142,7 +168,7 @@ export default function AddStockForm({ onClose, initialData }: Props) {
 
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           <div className="relative z-10">
-            <label className="block text-sm font-medium text-gray-700 mb-1">Search Ticker (e.g. RELIANCE.NS)</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Search Ticker (e.g. RELIANCE.NS, AAPL)</label>
             <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
               <input 
@@ -160,7 +186,7 @@ export default function AddStockForm({ onClose, initialData }: Props) {
 
             {/* Typeahead Dropdown */}
             {showDropdown && searchResults.length > 0 && (
-              <div className="absolute top-full left-0 right-0 mt-1 bg-white border-2 border-accent-500 rounded-lg shadow-xl max-h-60 overflow-y-auto overflow-x-hidden z-50">
+              <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-slate-300 rounded-xl shadow-xl max-h-60 overflow-y-auto overflow-x-hidden z-50">
                 {searchResults.map((stock, idx) => (
                   <div 
                     key={idx} 
@@ -192,6 +218,13 @@ export default function AddStockForm({ onClose, initialData }: Props) {
              <p className="text-red-600 text-xs mt-1 font-medium">Please select a valid stock from the dropdown.</p>
           )}
 
+          {/* Multi-Currency Selector */}
+          <CurrencySelect
+            value={selectedCurrency}
+            onChange={(code) => setValue('currency', code, { shouldValidate: true })}
+            label="Holding Currency"
+          />
+
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Quantity</label>
@@ -199,7 +232,9 @@ export default function AddStockForm({ onClose, initialData }: Props) {
               {errors.quantity && <p className="text-red-600 text-xs mt-1 font-medium">{errors.quantity.message}</p>}
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Avg Buy Price (₹)</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Avg Buy Price ({getCurrencySymbol(selectedCurrency)})
+              </label>
               <input {...register('averageBuyPrice')} type="number" step="0.01" className="glass-input" />
               {errors.averageBuyPrice && <p className="text-red-600 text-xs mt-1 font-medium">{errors.averageBuyPrice.message}</p>}
             </div>
@@ -209,6 +244,29 @@ export default function AddStockForm({ onClose, initialData }: Props) {
             <label className="block text-sm font-medium text-gray-700 mb-1">Purchase Date</label>
             <input {...register('purchaseDate')} type="date" className="glass-input" />
             {errors.purchaseDate && <p className="text-red-600 text-xs mt-1 font-medium">{errors.purchaseDate.message}</p>}
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Notes (Optional)</label>
+            <textarea {...register('notes')} className="glass-input resize-none" rows={2}></textarea>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4 border-t border-gray-100 pt-3">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Nominee Name</label>
+              <input {...register('nomineeName')} type="text" placeholder="Optional" className="glass-input" />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Relationship</label>
+              <select {...register('nomineeRelationship')} className="glass-input">
+                <option value="">None / Select</option>
+                <option value="Spouse">Spouse</option>
+                <option value="Child">Child</option>
+                <option value="Parent">Parent</option>
+                <option value="Sibling">Sibling</option>
+                <option value="Other">Other</option>
+              </select>
+            </div>
           </div>
 
               <button type="submit" disabled={loading} className="btn-primary w-full mt-4">

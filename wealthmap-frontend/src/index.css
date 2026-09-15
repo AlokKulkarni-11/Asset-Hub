@@ -37,45 +37,34 @@
 }
 
 @layer components {
-  /* Remove the background orbs as they don't fit the clean theme, or make them very subtle */
-  .bg-orb-gold {
-    display: none;
-  }
-  .bg-orb-blue {
-    display: none;
-  }
-
-  .glass-card {
-    background-color: var(--bg-surface);
-    border: 1px solid var(--border-color);
-    border-radius: 16px;
-    transition: all 0.2s ease;
-    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
-  }
-  .dark .glass-card {
-    box-shadow: none;
-  }
-
-  .glass-card:hover {
-    border-color: var(--accent-500);
-    transform: translateY(-2px);
-    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
-  }
-  
-  /* Modal/Form Cards - Better visibility for forms */
-  .fixed .glass-card {
+  /* Clean Solid Card Styling */
+  .card, .glass-card {
     background-color: #FFFFFF;
-    border: 2px solid var(--accent-500);
-    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.15), 0 10px 10px -5px rgba(0, 0, 0, 0.1);
+    border: 1px solid #E2E8F0; /* slate-200 */
+    border-radius: 16px;
+    box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05), 0 1px 2px -1px rgba(0, 0, 0, 0.05);
+    transition: all 0.2s ease;
+  }
+
+  .card:hover, .glass-card:hover {
+    border-color: #BAE6FD; /* sky-200 */
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.06), 0 2px 4px -2px rgba(0, 0, 0, 0.04);
   }
   
-  .fixed .glass-card:hover {
-    transform: none; /* Don't transform modals on hover */
+  /* Modal / Dialog Solid Card */
+  .fixed .glass-card, .fixed .card {
+    background-color: #FFFFFF;
+    border: 1px solid #E2E8F0;
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+  }
+  
+  .fixed .glass-card:hover, .fixed .card:hover {
+    transform: none;
   }
   
   .glass-card-gold {
-    background-color: var(--bg-surface);
-    border: 1px solid var(--accent-500);
+    background-color: #FFFFFF;
+    border: 1px solid #FDE68A;
   }
 
   /* Typography Base */
@@ -110,13 +99,13 @@
   .btn-primary:hover { 
     background-color: var(--accent-600);
     transform: translateY(-1px); 
-    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.2); 
+    box-shadow: 0 4px 12px rgba(14, 165, 233, 0.25); 
   }
 
   .btn-ghost {
-    background-color: var(--bg-surface);
+    background-color: #FFFFFF;
     color: var(--text-primary);
-    border: 1px solid var(--border-color);
+    border: 1px solid #E2E8F0;
     border-radius: 10px;
     padding: 10px 20px;
     transition: all 0.2s;
@@ -129,43 +118,45 @@
     background-color: var(--bg-surface-hover); 
   }
 
-  /* Inputs */
-  .glass-input {
-    background-color: var(--bg-surface);
-    border: 1px solid var(--border-color);
+  /* Solid Input Styling */
+  .input-field, .glass-input {
+    background-color: #FFFFFF;
+    border: 1px solid #CBD5E1; /* slate-300 */
     border-radius: 10px;
     color: var(--text-primary);
-    padding: 12px 16px;
-    transition: all 0.2s;
+    padding: 10px 14px;
+    transition: all 0.15s ease;
     width: 100%;
   }
-  .glass-input:focus {
+  .input-field:focus, .glass-input:focus {
     outline: none;
     border-color: var(--accent-500);
-    background-color: var(--bg-surface);
-    box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.10);
+    background-color: #FFFFFF;
+    box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.15);
   }
-  .glass-input::placeholder { color: var(--text-muted); }
+  .input-field::placeholder, .glass-input::placeholder { color: var(--text-muted); }
 
   /* Date Input Styling - Show Calendar Icon */
-  input[type="date"].glass-input {
+  input[type="date"].glass-input, input[type="date"].input-field {
     position: relative;
     color-scheme: light;
   }
   
-  input[type="date"].glass-input::-webkit-calendar-picker-indicator {
+  input[type="date"].glass-input::-webkit-calendar-picker-indicator,
+  input[type="date"].input-field::-webkit-calendar-picker-indicator {
     cursor: pointer;
     opacity: 0.6;
     filter: invert(0);
   }
   
-  input[type="date"].glass-input::-webkit-calendar-picker-indicator:hover {
+  input[type="date"].glass-input::-webkit-calendar-picker-indicator:hover,
+  input[type="date"].input-field::-webkit-calendar-picker-indicator:hover {
     opacity: 1;
   }
 
   /* Dropdown Options */
   select option {
-    background-color: var(--bg-surface);
+    background-color: #FFFFFF;
     color: var(--text-primary);
   }
 }

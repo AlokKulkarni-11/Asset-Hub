@@ -33,8 +33,11 @@ public class AssetController {
     private final MutualFundService mfService;
     private final RealEstateService reService;
     private final CryptoService cryptoService;
+    private final com.wealthmap.service.assets.BondService bondService;
+    private final com.wealthmap.service.assets.EsopRsuService esopRsuService;
     private final AssetRepository assetRepository;
     private final UserRepository userRepository;
+    private final com.wealthmap.service.AuditLogService auditLogService;
 
     @GetMapping
     public ResponseEntity<List<AssetResponse>> getAllAssets(Authentication authentication) {
@@ -47,6 +50,8 @@ public class AssetController {
         allAssets.addAll(mfService.getAllMutualFundsForUser(userEmail));
         allAssets.addAll(reService.getAllRealEstateForUser(userEmail));
         allAssets.addAll(cryptoService.getAllCryptoForUser(userEmail));
+        allAssets.addAll(bondService.getAllBondsForUser(userEmail));
+        allAssets.addAll(esopRsuService.getAllEsopRsusForUser(userEmail));
         
         return ResponseEntity.ok(allAssets);
     }
@@ -63,12 +68,16 @@ public class AssetController {
 
     @PostMapping("/mutualfund")
     public ResponseEntity<AssetResponse> addMutualFund(@RequestBody MutualFundRequest request, Authentication authentication) {
-        return ResponseEntity.ok(mfService.addMutualFund(request, authentication.getName()));
+        AssetResponse response = mfService.addMutualFund(request, authentication.getName());
+        auditLogService.log(authentication.getName(), "ADD_ASSET", "MUTUAL_FUND", response.getId(), "Added mutual fund: " + request.getSchemeName());
+        return ResponseEntity.ok(response);
     }
 
     @PutMapping("/mutualfund/{id}")
     public ResponseEntity<AssetResponse> updateMutualFund(@PathVariable Long id, @RequestBody MutualFundRequest request, Authentication authentication) {
-        return ResponseEntity.ok(mfService.updateMutualFund(id, request, authentication.getName()));
+        AssetResponse response = mfService.updateMutualFund(id, request, authentication.getName());
+        auditLogService.log(authentication.getName(), "UPDATE_ASSET", "MUTUAL_FUND", response.getId(), "Updated mutual fund: " + request.getSchemeName());
+        return ResponseEntity.ok(response);
     }
 
     @GetMapping("/realestate/{id}")
@@ -78,12 +87,16 @@ public class AssetController {
 
     @PostMapping("/realestate")
     public ResponseEntity<AssetResponse> addRealEstate(@RequestBody RealEstateRequest request, Authentication authentication) {
-        return ResponseEntity.ok(reService.addRealEstate(request, authentication.getName()));
+        AssetResponse response = reService.addRealEstate(request, authentication.getName());
+        auditLogService.log(authentication.getName(), "ADD_ASSET", "REAL_ESTATE", response.getId(), "Added real estate: " + request.getPropertyName());
+        return ResponseEntity.ok(response);
     }
 
     @PutMapping("/realestate/{id}")
     public ResponseEntity<AssetResponse> updateRealEstate(@PathVariable Long id, @RequestBody RealEstateRequest request, Authentication authentication) {
-        return ResponseEntity.ok(reService.updateRealEstate(id, request, authentication.getName()));
+        AssetResponse response = reService.updateRealEstate(id, request, authentication.getName());
+        auditLogService.log(authentication.getName(), "UPDATE_ASSET", "REAL_ESTATE", response.getId(), "Updated real estate: " + request.getPropertyName());
+        return ResponseEntity.ok(response);
     }
 
     // Crypto Endpoints
@@ -99,12 +112,16 @@ public class AssetController {
 
     @PostMapping("/crypto")
     public ResponseEntity<AssetResponse> addCrypto(@RequestBody CryptoRequest request, Authentication authentication) {
-        return ResponseEntity.ok(cryptoService.addCrypto(request, authentication.getName()));
+        AssetResponse response = cryptoService.addCrypto(request, authentication.getName());
+        auditLogService.log(authentication.getName(), "ADD_ASSET", "CRYPTO", response.getId(), "Added crypto: " + request.getName());
+        return ResponseEntity.ok(response);
     }
 
     @PutMapping("/crypto/{id}")
     public ResponseEntity<AssetResponse> updateCrypto(@PathVariable Long id, @RequestBody CryptoRequest request, Authentication authentication) {
-        return ResponseEntity.ok(cryptoService.updateCrypto(id, request, authentication.getName()));
+        AssetResponse response = cryptoService.updateCrypto(id, request, authentication.getName());
+        auditLogService.log(authentication.getName(), "UPDATE_ASSET", "CRYPTO", response.getId(), "Updated crypto: " + request.getName());
+        return ResponseEntity.ok(response);
     }
 
     @DeleteMapping("/{id}")
@@ -118,6 +135,7 @@ public class AssetController {
             throw new RuntimeException("Access Denied");
         }
         assetRepository.delete(asset);
+        auditLogService.log(userEmail, "DELETE_ASSET", asset.getAssetType().name(), asset.getId(), "Deleted asset: " + asset.getName());
         return ResponseEntity.ok().build();
     }
 }

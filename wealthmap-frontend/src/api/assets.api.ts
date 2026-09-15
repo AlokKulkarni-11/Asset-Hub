@@ -13,11 +13,47 @@ export interface AssetResponse {
   gainLoss: number;
   gainPercent: number;
   
-  // Optional specific fields
+  // Multi-Currency / Forex fields
+  currency?: string;
+  exchangeRate?: number;
+  originalInvestedAmount?: number;
+  originalCurrentValue?: number;
+
+  // Optional specific fields (Fixed Income / Bonds)
   maturityDate?: string;
   startDate?: string;
   interestRate?: number;
   bankName?: string;
+  bondType?: string;
+  issuer?: string;
+  couponRate?: number;
+  faceValue?: number;
+  quantity?: number;
+  compoundingFrequency?: string;
+  accruedInterest?: number;
+  maturityAmount?: number;
+  daysToMaturity?: number;
+
+  // Optional specific fields (ESOPs / RSUs)
+  planType?: 'ESOP' | 'RSU';
+  companyName?: string;
+  ticker?: string;
+  grantDate?: string;
+  vestingStartDate?: string;
+  totalUnitsGranted?: number;
+  vestedUnits?: number;
+  unvestedUnits?: number;
+  strikePrice?: number;
+  currentStockPrice?: number;
+  vestedValue?: number;
+  unvestedValue?: number;
+  exercisableGain?: number;
+  totalPotentialValue?: number;
+  isLivePrice?: boolean;
+
+  // Nominee fields
+  nomineeName?: string;
+  nomineeRelationship?: string;
 }
 
 export interface GoldRequest {
@@ -28,6 +64,9 @@ export interface GoldRequest {
   weightGrams: number;
   purity: string;
   purchasePrice: number;
+  currency?: string;
+  nomineeName?: string;
+  nomineeRelationship?: string;
 }
 
 export interface FDRequest {
@@ -38,7 +77,10 @@ export interface FDRequest {
   principalAmount: number;
   interestRate: number;
   compoundingFrequency: string;
+  currency?: string;
   notes?: string;
+  nomineeName?: string;
+  nomineeRelationship?: string;
 }
 
 export interface StockRequest {
@@ -47,7 +89,10 @@ export interface StockRequest {
   purchaseDate: string;
   quantity: number;
   averageBuyPrice: number;
+  currency?: string;
   notes?: string;
+  nomineeName?: string;
+  nomineeRelationship?: string;
 }
 
 export interface MutualFundRequest {
@@ -57,7 +102,10 @@ export interface MutualFundRequest {
   units: number;
   averageNav: number;
   purchaseDate: string;
+  currency?: string;
   notes?: string;
+  nomineeName?: string;
+  nomineeRelationship?: string;
 }
 
 export interface RealEstateRequest {
@@ -66,7 +114,10 @@ export interface RealEstateRequest {
   purchasePrice: number;
   estimatedCurrentValue: number;
   purchaseDate: string;
+  currency?: string;
   notes?: string;
+  nomineeName?: string;
+  nomineeRelationship?: string;
 }
 
 export interface StockSearchResponse {
@@ -199,7 +250,10 @@ export interface CryptoRequest {
   purchaseDate: string;
   units: number;
   averageBuyPrice: number;
+  currency?: string;
   notes?: string;
+  nomineeName?: string;
+  nomineeRelationship?: string;
 }
 
 export interface CryptoSearchResponse {
@@ -228,3 +282,26 @@ export const updateCryptoAsset = async (id: number, payload: CryptoRequest): Pro
   const { data } = await api.put(`/assets/crypto/${id}`, payload);
   return data;
 };
+
+// Forex / Currency Conversion APIs
+export const getForexRates = async (): Promise<Record<string, number>> => {
+  const { data } = await api.get('/forex/rates');
+  return data;
+};
+
+export const getForexRate = async (from = 'USD', to = 'INR'): Promise<number> => {
+  const { data } = await api.get(`/forex/rate?from=${from}&to=${to}`);
+  return data;
+};
+
+export const convertCurrency = async (amount: number, from = 'USD', to = 'INR'): Promise<{
+  originalAmount: number;
+  fromCurrency: string;
+  toCurrency: string;
+  exchangeRate: number;
+  convertedAmount: number;
+}> => {
+  const { data } = await api.get(`/forex/convert?amount=${amount}&from=${from}&to=${to}`);
+  return data;
+};
+

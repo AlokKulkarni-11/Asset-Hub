@@ -6,6 +6,7 @@ export interface GoalRequest {
   targetDate?: string;
   notes?: string;
   taggedAssetIds?: number[];
+  shared?: boolean;
 }
 
 export interface GoalResponse {
@@ -17,6 +18,8 @@ export interface GoalResponse {
   taggedAssetIds: number[];
   currentSavedAmount: number;
   progressPercentage: number;
+  shared: boolean;
+  familyGroupId?: number;
 }
 
 export const getAllGoals = async (): Promise<GoalResponse[]> => {

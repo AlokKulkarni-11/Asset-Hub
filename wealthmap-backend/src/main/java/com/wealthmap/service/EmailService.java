@@ -12,10 +12,10 @@ import java.time.Duration;
 @Service
 public class EmailService {
 
-    @Value("${brevo.api.key}")
+    @Value("${brevo.api.key:}")
     private String apiKey;
 
-    @Value("${brevo.sender.email}")
+    @Value("${brevo.sender.email:alokgdsc@gmail.com}")
     private String senderEmail;
 
     public void sendOtpEmail(String toEmail, String otp) {

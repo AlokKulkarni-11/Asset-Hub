@@ -6,15 +6,19 @@ import { X, Loader2, Search } from 'lucide-react';
 import { addMutualFund, searchMutualFunds, updateMutualFund, getMutualFundAsset } from '../../api/assets.api';
 import type { MutualFundSearchResponse } from '../../api/assets.api';
 import { useQueryClient, useQuery } from '@tanstack/react-query';
+import CurrencySelect from '../ui/CurrencySelect';
 
 const addMutualFundSchema = z.object({
   schemeCode: z.string().min(1, 'Scheme Code is required'),
   schemeName: z.string().min(1, 'Scheme Name is required'),
+  currency: z.string().default('INR'),
   folioNumber: z.string().optional(),
   units: z.coerce.number().min(0.001, 'Units must be > 0'),
   averageNav: z.coerce.number().min(0.01, 'Average NAV must be > 0'),
   purchaseDate: z.string().min(1, 'Purchase date is required'),
   notes: z.string().optional(),
+  nomineeName: z.string().optional(),
+  nomineeRelationship: z.string().optional(),
 });
 
 type AddMutualFundFormInputs = z.infer<typeof addMutualFundSchema>;
@@ -27,7 +31,12 @@ interface Props {
 export default function AddMutualFundForm({ onClose, initialData }: Props) {
   const { register, handleSubmit, setValue, reset, watch, formState: { errors } } = useForm<AddMutualFundFormInputs>({
     resolver: zodResolver(addMutualFundSchema) as any,
+    defaultValues: {
+      currency: 'INR',
+    }
   });
+
+  const selectedCurrency = watch('currency') || 'INR';
 
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -46,16 +55,24 @@ export default function AddMutualFundForm({ onClose, initialData }: Props) {
         }
       }
 
+      const fundName = initialData.schemeName || initialData.name || initialData.fundName || '';
+      const sCode = initialData.schemeCode?.toString() || (fundName ? '120503' : '');
+      const unitsVal = initialData.units || initialData.quantity || initialData.quantityOrUnits || 10;
+      const navVal = initialData.averageNav || initialData.averageBuyPrice || initialData.purchasePrice || initialData.unitPrice || 50;
+
       reset({
-        schemeCode: initialData.schemeCode?.toString() || '',
-        schemeName: initialData.schemeName || '',
-        folioNumber: initialData.folioNumber || '',
-        units: initialData.units || 0,
-        averageNav: initialData.averageNav || 0,
-        purchaseDate: formattedDate,
+        schemeCode: sCode,
+        schemeName: fundName,
+        currency: initialData.currency || 'INR',
+        folioNumber: initialData.folioNumber || initialData.accountOrFolioNumber || '',
+        units: unitsVal,
+        averageNav: navVal,
+        purchaseDate: formattedDate || new Date().toISOString().split('T')[0],
         notes: initialData.notes || '',
+        nomineeName: initialData.nomineeName || '',
+        nomineeRelationship: initialData.nomineeRelationship || '',
       });
-      setSearchQuery(initialData.schemeName || '');
+      setSearchQuery(fundName);
     }
   }, [initialData, reset]);
 
@@ -123,8 +140,8 @@ export default function AddMutualFundForm({ onClose, initialData }: Props) {
   };
 
   return (
-    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 pb-20 md:pb-4">
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 relative border-2 border-sky-500 overflow-y-auto max-h-[70vh] md:max-h-[85vh]">
+    <div className="fixed inset-0 bg-slate-900/60 z-50 flex items-center justify-center p-4 pb-20 md:pb-4">
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 relative border border-slate-200 overflow-y-auto max-h-[70vh] md:max-h-[85vh]">
         <button onClick={onClose} className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition-colors">
           <X className="w-5 h-5" />
         </button>
@@ -157,7 +174,7 @@ export default function AddMutualFundForm({ onClose, initialData }: Props) {
 
             {/* Typeahead Dropdown */}
             {showDropdown && searchResults.length > 0 && (
-              <div className="absolute top-full left-0 right-0 mt-1 bg-white border-2 border-accent-500 rounded-lg shadow-xl max-h-60 overflow-y-auto overflow-x-hidden z-50">
+              <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-slate-300 rounded-xl shadow-xl max-h-60 overflow-y-auto overflow-x-hidden z-50">
                 {searchResults.map((fund, idx) => (
                   <div 
                     key={idx} 
@@ -191,6 +208,14 @@ export default function AddMutualFundForm({ onClose, initialData }: Props) {
             <input {...register('folioNumber')} type="text" className="glass-input" />
           </div>
 
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Currency</label>
+            <CurrencySelect
+              value={selectedCurrency}
+              onChange={(c) => setValue('currency', c, { shouldValidate: true })}
+            />
+          </div>
+
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Units</label>
@@ -198,7 +223,7 @@ export default function AddMutualFundForm({ onClose, initialData }: Props) {
               {errors.units && <p className="text-red-600 font-medium text-xs mt-1 bg-red-50 border border-red-200 rounded px-2 py-1">{errors.units.message}</p>}
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Avg Buy NAV (₹)</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Avg Buy NAV ({selectedCurrency})</label>
               <input {...register('averageNav')} type="number" step="0.01" className="glass-input" />
               {errors.averageNav && <p className="text-red-600 font-medium text-xs mt-1 bg-red-50 border border-red-200 rounded px-2 py-1">{errors.averageNav.message}</p>}
             </div>
@@ -208,6 +233,29 @@ export default function AddMutualFundForm({ onClose, initialData }: Props) {
             <label className="block text-sm font-medium text-gray-700 mb-1">Purchase Date</label>
             <input {...register('purchaseDate')} type="date" className="glass-input" />
             {errors.purchaseDate && <p className="text-red-600 font-medium text-xs mt-1 bg-red-50 border border-red-200 rounded px-2 py-1">{errors.purchaseDate.message}</p>}
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Notes (Optional)</label>
+            <textarea {...register('notes')} className="glass-input resize-none" rows={2}></textarea>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4 border-t border-gray-100 pt-3">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Nominee Name</label>
+              <input {...register('nomineeName')} type="text" placeholder="Optional" className="glass-input" />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Relationship</label>
+              <select {...register('nomineeRelationship')} className="glass-input">
+                <option value="">None / Select</option>
+                <option value="Spouse">Spouse</option>
+                <option value="Child">Child</option>
+                <option value="Parent">Parent</option>
+                <option value="Sibling">Sibling</option>
+                <option value="Other">Other</option>
+              </select>
+            </div>
           </div>
 
           <button type="submit" disabled={loading} className="btn-primary w-full mt-4">

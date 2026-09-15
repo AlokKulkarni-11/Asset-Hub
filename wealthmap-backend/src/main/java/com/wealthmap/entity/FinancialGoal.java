@@ -40,6 +40,10 @@ public class FinancialGoal {
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "family_group_id")
+    private FamilyGroup familyGroup;
+
     @CreationTimestamp
     private LocalDateTime createdAt;
 }

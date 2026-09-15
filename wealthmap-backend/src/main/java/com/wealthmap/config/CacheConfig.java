@@ -15,7 +15,10 @@ public class CacheConfig {
 
     @Bean
     public CacheManager cacheManager() {
-        CaffeineCacheManager cacheManager = new CaffeineCacheManager("goldPrice", "mutualFundNav", "stockPrice", "forexRate", "cryptoPrice", "benchmarks");
+        CaffeineCacheManager cacheManager = new CaffeineCacheManager(
+                "goldPrice", "mutualFundNav", "stockPrice", "forexRate", "forexRates", "cryptoPrice", "benchmarks",
+                "aiNarrative", "healthScore", "geminiResponse"
+        );
         cacheManager.setCaffeine(caffeineCacheBuilder());
         return cacheManager;
     }

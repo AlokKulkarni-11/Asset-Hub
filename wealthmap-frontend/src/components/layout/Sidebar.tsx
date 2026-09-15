@@ -1,6 +1,6 @@
 import React from 'react';
 import { NavLink, Link } from 'react-router-dom';
-import { LayoutDashboard, Wallet, Users, Calendar, Settings, LogOut, TrendingDown, Target } from 'lucide-react';
+import { LayoutDashboard, Wallet, Users, Calendar, Settings, LogOut, TrendingDown, Target, Sparkles } from 'lucide-react';
 import { useAuthStore } from '../../store/authStore';
 
 interface SidebarProps {
@@ -53,7 +53,17 @@ export default function Sidebar({ className = '', onLinkClick }: SidebarProps) {
         ))}
       </nav>
 
-      <div className="p-4 border-t border-border mt-auto shrink-0">
+      <div className="p-4 border-t border-border mt-auto shrink-0 space-y-1">
+        <Link
+          to="/privacy"
+          onClick={onLinkClick}
+          className="flex items-center gap-4 px-4 py-2 w-full rounded-xl text-xs text-text-muted hover:text-text-primary hover:bg-surface-hover transition-colors duration-200 whitespace-nowrap"
+        >
+          <span className="w-6 text-center shrink-0">🔒</span>
+          <span className="opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity duration-300">
+            Privacy Policy
+          </span>
+        </Link>
         <button
           onClick={() => {
             if (onLinkClick) onLinkClick();
