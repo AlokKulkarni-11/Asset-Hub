@@ -1,0 +1,22 @@
+# Maven build
+target/
+**/target/
+*.class
+*.jar
+
+# Frontend build
+node_modules/
+**/node_modules/
+dist/
+**/dist/
+
+# IDE & Editor
+.idea/
+*.iml
+.vscode/
+
+# Logs & Environment
+*.log
+.env
+.DS_Store
+Thumbs.db

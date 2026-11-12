@@ -1,14 +1,23 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { MessageSquareText, Send, Loader2, Bot, User, ArrowRight, ArrowLeft, Activity } from 'lucide-react';
+import { Send, Loader2, User, ArrowRight, ArrowLeft, Activity, Sparkles } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { aiApi, AiChatResponse } from '../api/ai.api';
 import { healthScoreApi, HealthScoreResponse } from '../api/healthScore.api';
+import HubMateBot from '../components/ai/HubMateBot';
 
 interface Message {
   role: 'user' | 'assistant';
   content: string;
   referencedDataPoints?: string[];
 }
+
+const HUB_MATE_INSIGHTS = [
+  "Analyzing real-time asset allocations. What would you like to explore? 📊",
+  "I compute Sharpe ratios, emergency buffers & tax efficiency across all asset classes! 💡",
+  "Zero hallucinations: every answer is grounded strictly in your live database ledger. 🛡️",
+  "Tip: Ask me 'How safe is my portfolio from a liquidity perspective?' 🚀",
+  "I can audit your loan interest costs and simulate prepayment scenarios. ⚡",
+];
 
 export const AiAssistantPage: React.FC = () => {
   const navigate = useNavigate();
@@ -22,8 +31,13 @@ export const AiAssistantPage: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [healthScore, setHealthScore] = useState<HealthScoreResponse | null>(null);
   const [healthLoading, setHealthLoading] = useState(true);
+  const [insightIdx, setInsightIdx] = useState(0);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  const cycleInsight = () => {
+    setInsightIdx((prev) => (prev + 1) % HUB_MATE_INSIGHTS.length);
+  };
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -98,11 +112,14 @@ export const AiAssistantPage: React.FC = () => {
       {/* Header */}
       <div className="shrink-0 mb-3 flex items-center justify-between">
         <div>
-          <h1 className="text-xl sm:text-2xl font-extrabold text-slate-900 tracking-tight flex items-center">
-            <div className="p-1.5 bg-indigo-600 rounded-xl mr-2.5 text-white shrink-0">
-              <Bot className="w-5 h-5" />
+          <h1 className="text-xl sm:text-2xl font-extrabold text-slate-900 tracking-tight flex items-center gap-2">
+            <div className="w-9 h-9 rounded-xl bg-slate-950 border border-indigo-500/40 flex items-center justify-center shrink-0 overflow-hidden shadow-xs">
+              <HubMateBot size="mini" interactive={false} />
             </div>
             <span>Hub Mate</span>
+            <span className="text-xs font-mono font-medium text-emerald-600 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full ml-1 hidden sm:inline-block">
+              Grounded AI
+            </span>
           </h1>
           <p className="text-xs sm:text-sm text-slate-500 mt-0.5">
             Grounded personal wealth copilot reasoning strictly over your live portfolio data
@@ -119,8 +136,39 @@ export const AiAssistantPage: React.FC = () => {
 
       {/* Main Content: Fit to remaining height without outer scrollbars */}
       <div className="flex-1 min-h-0 grid grid-cols-1 lg:grid-cols-12 gap-4">
-        {/* Left Side: Vitals & Inquiries */}
+        {/* Left Side: Companion Bot, Vitals & Inquiries */}
         <div className="lg:col-span-4 flex flex-col gap-3 min-h-0 overflow-y-auto pr-1">
+          {/* Hub Mate Active Persona Companion Card */}
+          <div className="bg-gradient-to-br from-slate-950 via-slate-900 to-indigo-950 text-white border border-indigo-500/30 rounded-2xl p-4 shadow-sm shrink-0 relative overflow-hidden flex flex-col items-center text-center">
+            <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-500/10 rounded-full blur-2xl pointer-events-none" />
+            <div className="absolute bottom-0 left-0 w-24 h-24 bg-sky-500/10 rounded-full blur-xl pointer-events-none" />
+
+            <HubMateBot
+              size="md"
+              isThinking={loading}
+              interactive={true}
+              showDialogue={true}
+              dialogueText={
+                loading
+                  ? "Consulting live ledger records & computing metrics... 📡"
+                  : HUB_MATE_INSIGHTS[insightIdx]
+              }
+              onDialogueClick={cycleInsight}
+              className="mb-1"
+            />
+
+            <div className="mt-1 flex items-center justify-between w-full border-t border-slate-800/80 pt-2.5 text-[11px]">
+              <span className="text-slate-400 flex items-center gap-1.5">
+                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                <span>Copilot AI Engine</span>
+              </span>
+              <span className="font-mono text-indigo-300 text-[10px] bg-indigo-950/80 px-2 py-0.5 rounded border border-indigo-800/60">
+                v2.4 Grounded
+              </span>
+            </div>
+          </div>
+
+          {/* Portfolio Vital Signs */}
           <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm shrink-0">
             <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-2.5">Portfolio Vital Signs</h3>
             {healthLoading ? (
@@ -187,8 +235,8 @@ export const AiAssistantPage: React.FC = () => {
                 className={`flex items-start space-x-2.5 ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}
               >
                 {m.role === 'assistant' && (
-                  <div className="p-2 bg-indigo-600 text-white rounded-xl shadow-sm shrink-0 mt-0.5">
-                    <Bot className="w-4 h-4" />
+                  <div className="w-8 h-8 rounded-xl bg-slate-950 border border-indigo-500/40 flex items-center justify-center shrink-0 mt-0.5 shadow-xs overflow-hidden">
+                    <HubMateBot size="mini" interactive={false} />
                   </div>
                 )}
                 <div
@@ -219,12 +267,12 @@ export const AiAssistantPage: React.FC = () => {
             ))}
             {loading && (
               <div className="flex items-start space-x-2.5">
-                <div className="p-2 bg-indigo-600 text-white rounded-xl shadow-sm shrink-0">
-                  <Bot className="w-4 h-4" />
+                <div className="w-8 h-8 rounded-xl bg-slate-950 border border-indigo-500/40 flex items-center justify-center shrink-0 mt-0.5 shadow-xs overflow-hidden">
+                  <HubMateBot size="mini" isThinking={true} interactive={false} />
                 </div>
                 <div className="bg-white text-slate-600 border border-slate-200 rounded-2xl rounded-bl-none p-3.5 shadow-sm flex items-center space-x-2 text-xs">
                   <Loader2 className="w-3.5 h-3.5 animate-spin text-indigo-600" />
-                  <span>Analyzing your live portfolio data...</span>
+                  <span>Hub Mate is querying your portfolio records & computing metrics...</span>
                 </div>
               </div>
             )}

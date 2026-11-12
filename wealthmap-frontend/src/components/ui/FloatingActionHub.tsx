@@ -19,6 +19,7 @@ import {
   Bot
 } from 'lucide-react';
 import CommandPalette from './CommandPalette';
+import HubMateBot from '../ai/HubMateBot';
 import AssetSelectorModal from '../forms/AssetSelectorModal';
 import AddGoldForm from '../forms/AddGoldForm';
 import AddFDForm from '../forms/AddFDForm';
@@ -190,10 +191,10 @@ export default function FloatingActionHub() {
                 Hub Mate (Copilot)
               </span>
               <button
-                className="w-11 h-11 rounded-full bg-indigo-600 text-white hover:bg-indigo-700 shadow-lg shadow-black/10 flex items-center justify-center hover:scale-110 active:scale-95 transition-all duration-200"
+                className="w-11 h-11 rounded-full bg-slate-950 border border-indigo-500/50 text-white hover:bg-slate-900 shadow-lg shadow-black/10 flex items-center justify-center hover:scale-110 active:scale-95 transition-all duration-200 overflow-hidden relative"
                 title="Hub Mate (Copilot)"
               >
-                <Bot className="w-5 h-5" />
+                <HubMateBot size="mini" interactive={false} />
               </button>
             </div>
 

@@ -151,8 +151,18 @@ Most net-worth trackers are simple ledgers where you just type in a number. Asse
 - **Direct Indian IBJA Metal Pricing:** Live 24K/22K Gold and 999 Silver rates fetched directly from IBJA (`ibjarates.com`) and exposed via `/api/assets/metals/rates`.
 - **Public Landing Page & Auth-Aware Root Routing:** Visitors at `/` see `LandingPage` when logged out and go directly to `Dashboard` when logged in.
 
+### Phase 11: Production Security Hardening & Brute-Force Throttling (Completed)
+- **Eliminated Unauthenticated Data Dump Endpoints:** Removed legacy `/api/auth/migrate` endpoint to prevent unauthorized database information leaks.
+- **Document Vault IDOR Protection:** Enforced strict user and family ownership verification on `/api/documents/asset/{assetId}` and `/api/documents/liability/{liabilityId}`, returning `403 Forbidden` for unauthorized cross-account lookups.
+- **Upload Validation & Path Traversal Prevention:** Enforced strict MIME-type whitelist (`pdf`, `jpeg`, `png`, `webp`), 15MB file-size ceiling, and filename sanitization via `Paths.get(name).getFileName()`.
+- **Restricted CORS Policy:** Replaced wildcard origin patterns with configurable, domain-specific allowed origins (`cors.allowed-origins` supporting `localhost`, `*.vercel.app`, `*.netlify.app`, `*.onrender.com`).
+- **Cryptographic OTP Security & Invalidation:** Upgraded password reset OTP generation to `SecureRandom`, capped token validity at 10 minutes, and enforced automatic database token purging after 5 failed verification attempts.
+- **In-Memory IP Rate Limiting (`IpRateLimitingFilter`):** Built a zero-DB overhead Caffeine cache filter intercepting sensitive authentication endpoints (`/login`, `/register`, `/forgot-password`, `/reset-password`, `/verify-totp`, `/tfa/enable`) to enforce a strict limit of 5 requests per IP per minute with `429 Too Many Requests` responses.
+- **Account-Level 3-Strike Lockout:** Protected login against distributed botnets by tracking failed authentication attempts per normalized email in Caffeine cache. Enforces a 30-minute account lockout upon 3 consecutive failed attempts and resets upon successful login.
+- **Seamless 6-Digit TOTP Auto-Submit:** Optimized 2FA verification UX on both the login challenge screen and profile setup flow by automatically submitting verification requests the moment the 6th digit is typed or pasted.
+
 ## What is Left (Future Iterations)
-*All primary features and core roadmap milestones across Phases 1 through 10, including AI Integration, Document Vault, Wealth Lab Calculators, Physical Silver, Live Indian IBJA Metal Pricing, multi-currency foreign asset tracking, and financial reporting exports, are fully realized and active in production.*
+*All primary features and core roadmap milestones across Phases 1 through 11, including AI Integration, Document Vault, Wealth Lab Calculators, Physical Silver, Live Indian IBJA Metal Pricing, multi-currency foreign asset tracking, financial reporting exports, and enterprise-grade security hardening, are fully realized and active in production.*
 
 ---
 *Note: This document acts as the living blueprint for Asset Hub. It should be updated continually after every major development iteration to reflect the current state of the software.*

@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { Bot, RefreshCw, ArrowRight } from 'lucide-react';
+import { RefreshCw, ArrowRight } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { aiApi } from '../../api/ai.api';
+import HubMateBot from './HubMateBot';
 
 export const AiNarrativeCard: React.FC = () => {
   const navigate = useNavigate();
@@ -52,8 +53,8 @@ export const AiNarrativeCard: React.FC = () => {
     <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm relative transition-all">
       <div className="flex items-center justify-between mb-2">
         <div className="flex items-center space-x-2">
-          <div className="p-1.5 bg-indigo-50 border border-indigo-100 rounded-lg text-indigo-600">
-            <Bot className="w-4 h-4" />
+          <div className="w-7 h-7 rounded-lg bg-slate-950 border border-indigo-500/40 flex items-center justify-center shrink-0 overflow-hidden shadow-xs">
+            <HubMateBot size="mini" interactive={false} />
           </div>
           <h3 className="text-xs font-bold uppercase tracking-wider text-slate-700">Executive Portfolio Briefing</h3>
         </div>
@@ -62,7 +63,6 @@ export const AiNarrativeCard: React.FC = () => {
             onClick={() => navigate('/assistant')}
             className="flex items-center gap-1.5 text-[11px] font-semibold text-indigo-600 hover:text-indigo-700 bg-indigo-50 hover:bg-indigo-100/70 border border-indigo-100 px-2.5 py-1 rounded-lg transition-colors"
           >
-            <Bot className="w-3.5 h-3.5" />
             <span>Ask Hub Mate</span>
             <ArrowRight className="w-3 h-3" />
           </button>
