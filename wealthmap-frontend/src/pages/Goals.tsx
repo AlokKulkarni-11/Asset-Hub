@@ -1,20 +1,39 @@
 // @ts-nocheck
-import React, { useState, useMemo } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { getAllGoals, createGoal, updateGoal, deleteGoal } from '../api/goals.api';
 import type { GoalResponse } from '../api/goals.api';
-import { getEmergencyFund, saveEmergencyFund, calculateRetirement } from '../api/planning.api';
-import type { RetirementResponse } from '../api/planning.api';
+import { getEmergencyFund, saveEmergencyFund } from '../api/planning.api';
 import { getAllAssets } from '../api/assets.api';
 import { getAllLiabilities } from '../api/liabilities.api';
-import { Target, Plus, ShieldCheck, Calculator, Trash2, Edit2, CheckCircle2, ChevronRight, AlertCircle, X, Loader2 } from 'lucide-react';
-import SwpCalculator from './SwpCalculator';
+import { Target, Plus, ShieldCheck, Calendar, TrendingUp, Trash2, Edit2, CheckCircle2, ChevronRight, AlertCircle, X, Loader2 } from 'lucide-react';
+import Maturities from './Maturities';
+import GoalWealthPlanner from '../components/calculators/GoalWealthPlanner';
 import { getMyFamily, getFamilyAssets } from '../api/family.api';
+
+type GoalsTab = 'goals' | 'planner' | 'emergency' | 'maturities';
+const VALID_GOALS_TABS: GoalsTab[] = ['goals', 'planner', 'emergency', 'maturities'];
 
 export default function Goals() {
   const queryClient = useQueryClient();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const tabParam = searchParams.get('tab') as GoalsTab | null;
 
-  const [activeTab, setActiveTab] = useState<'goals' | 'emergency' | 'swp' | 'retirement'>('goals');
+  const [activeTab, setActiveTab] = useState<GoalsTab>(
+    tabParam && VALID_GOALS_TABS.includes(tabParam) ? tabParam : 'goals'
+  );
+
+  useEffect(() => {
+    if (tabParam && VALID_GOALS_TABS.includes(tabParam) && tabParam !== activeTab) {
+      setActiveTab(tabParam);
+    }
+  }, [tabParam, activeTab]);
+
+  const handleTabChange = (tab: GoalsTab) => {
+    setActiveTab(tab);
+    setSearchParams({ tab }, { replace: true });
+  };
 
   // Modal States
   const [showGoalModal, setShowGoalModal] = useState(false);
@@ -31,16 +50,6 @@ export default function Goals() {
   // Emergency Fund Form State
   const [monthlyExpenseInput, setMonthlyExpenseInput] = useState('');
   const [targetMonthsInput, setTargetMonthsInput] = useState('6');
-
-
-  // Retirement Calculator State
-  const [currentAge, setCurrentAge] = useState(30);
-  const [retirementAge, setRetirementAge] = useState(60);
-  const [monthlyExpenseToday, setMonthlyExpenseToday] = useState(50000);
-  const [expectedReturnRate, setExpectedReturnRate] = useState(10);
-  const [inflationRate, setInflationRate] = useState(6);
-  const [useCustomNetWorth, setUseCustomNetWorth] = useState(false);
-  const [customNetWorthInput, setCustomNetWorthInput] = useState('');
 
   // Queries
   const { data: family } = useQuery({
@@ -152,38 +161,6 @@ export default function Goals() {
   };
 
 
-  const activeNetWorth = useCustomNetWorth ? (Number(customNetWorthInput) || 0) : netWorth;
-
-  // Reactively calculate retirement on param changes
-  const retirementResult = useMemo(() => {
-    const yearsToRetirement = Math.max(1, retirementAge - currentAge);
-    const monthlyExpenseTodayVal = Number(monthlyExpenseToday) || 0;
-    const inflationRateVal = (Number(inflationRate) || 0) / 100.0;
-    const expectedReturnRateVal = (Number(expectedReturnRate) || 0) / 100.0;
-
-    const inflationFactor = Math.pow(1.0 + inflationRateVal, yearsToRetirement);
-    const adjustedMonthlyExpense = monthlyExpenseTodayVal * inflationFactor;
-    const annualExpenseAtRetirement = adjustedMonthlyExpense * 12.0;
-
-    // Required Retirement Corpus using Rule of 25 (or 4% safe withdrawal rule, corresponding to 25 years of retirement)
-    const requiredRetirementCorpus = annualExpenseAtRetirement * 25.0;
-
-    // Projected Net Worth at Retirement Age
-    const projectedNetWorthAtRetirement = activeNetWorth * Math.pow(1.0 + expectedReturnRateVal, yearsToRetirement);
-    const shortfallOrSurplus = projectedNetWorthAtRetirement - requiredRetirementCorpus;
-    const readiness = requiredRetirementCorpus > 0 ? (projectedNetWorthAtRetirement / requiredRetirementCorpus) * 100.0 : 100.0;
-    const readinessPercentage = Math.min(100.0, Math.max(0.0, readiness));
-
-    return {
-      yearsToRetirement,
-      inflationAdjustedMonthlyExpense: adjustedMonthlyExpense,
-      requiredRetirementCorpus,
-      projectedNetWorthAtRetirement,
-      shortfallOrSurplus,
-      readinessPercentage
-    };
-  }, [currentAge, retirementAge, monthlyExpenseToday, expectedReturnRate, inflationRate, activeNetWorth]);
-
   return (
     <div className="space-y-6">
       
@@ -191,7 +168,7 @@ export default function Goals() {
       <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 border-b border-border pb-4">
         <div>
           <h1 className="text-heading text-2xl font-dmsans">Goals & Financial Planning</h1>
-          <p className="text-text-secondary text-sm">Target corpus tracking, emergency preparedness, and retirement readiness.</p>
+          <p className="text-text-secondary text-sm">Target corpus tracking, emergency preparedness, and upcoming maturities.</p>
         </div>
 
         {/* Display Current Net Worth */}
@@ -210,14 +187,21 @@ export default function Goals() {
       <div className="flex justify-start">
         <div className="flex flex-wrap gap-1 p-1 bg-surface-hover rounded-xl border border-border">
           <button 
-            onClick={() => setActiveTab('goals')}
+            onClick={() => handleTabChange('goals')}
             className={`flex items-center gap-2 px-3 py-2 text-xs font-semibold rounded-lg transition-all ${activeTab === 'goals' ? 'bg-surface shadow-sm border border-border text-accent-500' : 'text-text-secondary hover:text-text-primary'}`}
           >
             <Target className="w-4 h-4" />
             Goals
           </button>
           <button 
-            onClick={() => setActiveTab('emergency')}
+            onClick={() => handleTabChange('planner')}
+            className={`flex items-center gap-2 px-3 py-2 text-xs font-semibold rounded-lg transition-all ${activeTab === 'planner' ? 'bg-surface shadow-sm border border-border text-accent-500' : 'text-text-secondary hover:text-text-primary'}`}
+          >
+            <TrendingUp className="w-4 h-4" />
+            Wealth Planner
+          </button>
+          <button 
+            onClick={() => handleTabChange('emergency')}
             className={`flex items-center gap-2 px-3 py-2 text-xs font-semibold rounded-lg transition-all ${activeTab === 'emergency' ? 'bg-surface shadow-sm border border-border text-accent-500' : 'text-text-secondary hover:text-text-primary'}`}
           >
             <ShieldCheck className="w-4 h-4" />
@@ -225,18 +209,11 @@ export default function Goals() {
           </button>
 
           <button 
-            onClick={() => setActiveTab('swp')}
-            className={`flex items-center gap-2 px-3 py-2 text-xs font-semibold rounded-lg transition-all ${activeTab === 'swp' ? 'bg-surface shadow-sm border border-border text-accent-500' : 'text-text-secondary hover:text-text-primary'}`}
+            onClick={() => handleTabChange('maturities')}
+            className={`flex items-center gap-2 px-3 py-2 text-xs font-semibold rounded-lg transition-all ${activeTab === 'maturities' ? 'bg-surface shadow-sm border border-border text-accent-500' : 'text-text-secondary hover:text-text-primary'}`}
           >
-            <Calculator className="w-4 h-4" />
-            SWP Calculator
-          </button>
-          <button 
-            onClick={() => setActiveTab('retirement')}
-            className={`flex items-center gap-2 px-3 py-2 text-xs font-semibold rounded-lg transition-all ${activeTab === 'retirement' ? 'bg-surface shadow-sm border border-border text-accent-500' : 'text-text-secondary hover:text-text-primary'}`}
-          >
-            <Calculator className="w-4 h-4" />
-            Retirement
+            <Calendar className="w-4 h-4" />
+            Upcoming Maturities
           </button>
         </div>
       </div>
@@ -405,130 +382,47 @@ export default function Goals() {
               </div>
             </div>
 
-            <div className="mt-6 p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-xs text-emerald-600 dark:text-emerald-400 font-medium">
-              💡 Liquid assets include instant-access investments (Gold, Mutual Funds, Stocks, and Liquid FDs) accessible within 24-48 hours.
+            <div className="mt-6 p-3.5 rounded-lg bg-zinc-50 border border-border text-xs text-text-secondary">
+              Liquid assets include instant-access investments (Gold, Mutual Funds, Stocks, and Liquid FDs) accessible within 24–48 hours.
             </div>
           </div>
         </div>
       )}
 
-      {/* TAB 3: SWP CALCULATOR */}
-      {activeTab === 'swp' && (
-        <SwpCalculator />
+      {/* TAB 3: UPCOMING MATURITIES */}
+      {activeTab === 'maturities' && (
+        <Maturities embedded />
       )}
 
-      {/* TAB 4: RETIREMENT CALCULATOR */}
-      {activeTab === 'retirement' && (
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <div className="glass-card p-6 space-y-4">
-            <h3 className="text-lg font-medium text-text-primary">Calculator Parameters</h3>
-            
-            <div className="space-y-3 text-xs">
-              <div>
-                <label className="font-semibold text-text-secondary block mb-1">Current Age: {currentAge}</label>
-                <input type="range" min="18" max="70" value={currentAge} onChange={e => setCurrentAge(Number(e.target.value))} className="w-full accent-accent-500 h-2 bg-surface-hover rounded" />
-              </div>
-
-              <div>
-                <label className="font-semibold text-text-secondary block mb-1">Retirement Age: {retirementAge}</label>
-                <input type="range" min="40" max="75" value={retirementAge} onChange={e => setRetirementAge(Number(e.target.value))} className="w-full accent-accent-500 h-2 bg-surface-hover rounded" />
-              </div>
-
-              <div>
-                <label className="font-semibold text-text-secondary block mb-1">Desired Monthly Expense Today (₹)</label>
-                <input type="number" value={monthlyExpenseToday} onChange={e => setMonthlyExpenseToday(Number(e.target.value))} className="glass-input text-xs" />
-              </div>
-
-              <div>
-                <label className="font-semibold text-text-secondary block mb-1">Expected Investment Return Rate (%): {expectedReturnRate}%</label>
-                <input type="range" min="4" max="18" step="0.5" value={expectedReturnRate} onChange={e => setExpectedReturnRate(Number(e.target.value))} className="w-full accent-accent-500 h-2 bg-surface-hover rounded" />
-              </div>
-
-              <div>
-                <label className="font-semibold text-text-secondary block mb-1">Assumed Inflation Rate (%): {inflationRate}%</label>
-                <input type="range" min="3" max="10" step="0.5" value={inflationRate} onChange={e => setInflationRate(Number(e.target.value))} className="w-full accent-accent-500 h-2 bg-surface-hover rounded" />
-              </div>
-
-              {/* Custom Net Worth Selection */}
-              <div className="border-t border-border pt-3 space-y-2">
-                <div className="flex items-center gap-2">
-                  <input 
-                    type="checkbox"
-                    id="useCustomNetWorth"
-                    checked={useCustomNetWorth}
-                    onChange={e => setUseCustomNetWorth(e.target.checked)}
-                    className="rounded border-border text-accent-500 focus:ring-accent-500 cursor-pointer"
-                  />
-                  <label htmlFor="useCustomNetWorth" className="font-semibold text-text-secondary cursor-pointer select-none">
-                    Use Custom Net Worth
-                  </label>
-                </div>
-                {useCustomNetWorth ? (
-                  <div className="animate-fadeIn">
-                    <label className="block text-[10px] font-semibold text-text-secondary mb-1">Custom Net Worth Amount (₹)</label>
-                    <input 
-                      type="number"
-                      value={customNetWorthInput}
-                      onChange={e => setCustomNetWorthInput(e.target.value)}
-                      placeholder={`e.g. ${Math.round(netWorth)}`}
-                      className="glass-input text-xs font-semibold"
-                    />
-                  </div>
-                ) : (
-                  <div className="text-[10px] text-text-muted leading-relaxed">
-                    Linked to calculated Net Worth: <strong className="text-accent-500">{formatCurrency(netWorth)}</strong>
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-
-          <div className="lg:col-span-2 glass-card p-6 flex flex-col justify-between">
-            <div>
-              <div className="flex items-center gap-2 mb-2">
-                <Calculator className="w-6 h-6 text-accent-500" />
-                <h3 className="text-xl font-bold text-text-primary">Retirement Readiness Analysis</h3>
-              </div>
-              <p className="text-xs text-text-secondary mb-6">Inflation-adjusted corpus projection using the 4% annual withdrawal rule (assumes 25 years of post-retirement coverage).</p>
-
-              <div className="space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="p-4 rounded-xl bg-surface-hover border border-border">
-                    <p className="text-xs text-text-secondary font-medium mb-1">Years to Retirement</p>
-                    <p className="text-2xl font-bold text-text-primary">{retirementResult.yearsToRetirement} Years</p>
-                    <p className="text-[10px] text-text-muted mt-1">Age {currentAge} to Age {retirementAge}.</p>
-                  </div>
-                  <div className="p-4 rounded-xl bg-surface-hover border border-border">
-                    <p className="text-xs text-text-secondary font-medium mb-1">Inflation-Adjusted Monthly Expense</p>
-                    <p className="text-2xl font-bold text-accent-500">{formatCurrency(retirementResult.inflationAdjustedMonthlyExpense)}</p>
-                    <p className="text-[10px] text-text-muted mt-1">Expense value inflated by {inflationRate}% yearly.</p>
-                  </div>
-                  <div className="p-4 rounded-xl bg-surface-hover border border-border">
-                    <p className="text-xs text-text-secondary font-medium mb-1">Required Corpus (25 Yrs. Retirement)</p>
-                    <p className="text-2xl font-bold text-emerald-500">{formatCurrency(retirementResult.requiredRetirementCorpus)}</p>
-                    <p className="text-[10px] text-text-muted mt-1">Based on the 4% safe annual withdrawal rule.</p>
-                  </div>
-                  <div className="p-4 rounded-xl bg-surface-hover border border-border">
-                    <p className="text-xs text-text-secondary font-medium mb-1">Projected Net Worth at Age {retirementAge}</p>
-                    <p className="text-2xl font-bold text-indigo-500">{formatCurrency(retirementResult.projectedNetWorthAtRetirement)}</p>
-                    <p className="text-[10px] text-text-muted mt-1">Compounded return at {expectedReturnRate}% yearly.</p>
-                  </div>
-                </div>
-
-                {/* Readiness Progress Bar */}
-                <div className="p-4 rounded-xl bg-surface border border-border space-y-2">
-                  <div className="flex justify-between text-sm font-bold">
-                    <span className="text-text-primary">Retirement Readiness Score</span>
-                    <span className="text-accent-500">{retirementResult.readinessPercentage.toFixed(1)}%</span>
-                  </div>
-                  <div className="w-full h-4 bg-surface-hover rounded-full overflow-hidden border border-border">
-                    <div className="h-full bg-accent-500 rounded-full transition-all duration-500" style={{ width: `${retirementResult.readinessPercentage}%` }} />
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
+      {/* TAB 4: GOAL-BASED WEALTH PLANNER */}
+      {activeTab === 'planner' && (
+        <GoalWealthPlanner
+          initialCorpus={
+            goals && goals.length > 0
+              ? goals.reduce((sum, g) => sum + (g.currentSavedAmount || 0), 0)
+              : Math.max(0, netWorth)
+          }
+          initialGoals={
+            goals && goals.length > 0
+              ? goals.map((g) => {
+                  const yrs = g.targetDate
+                    ? Math.max(
+                        1,
+                        Math.round(
+                          (new Date(g.targetDate).getTime() - Date.now()) /
+                            (1000 * 60 * 60 * 24 * 365.25)
+                        )
+                      )
+                    : 10;
+                  return {
+                    name: g.name,
+                    currentCost: g.targetAmount || 1000000,
+                    years: yrs,
+                  };
+                })
+              : undefined
+          }
+        />
       )}
 
       {/* CREATE/EDIT GOAL MODAL */}

@@ -1166,7 +1166,7 @@ export default function Dashboard() {
                 <p className="text-xs text-text-secondary mt-1">Next fixed income instruments reaching maturity date.</p>
               </div>
               <button
-                onClick={() => navigate('/maturities')}
+                onClick={() => navigate('/goals?tab=maturities')}
                 className="text-xs text-accent-500 font-semibold hover:underline flex items-center gap-1"
               >
                 View All Schedule →

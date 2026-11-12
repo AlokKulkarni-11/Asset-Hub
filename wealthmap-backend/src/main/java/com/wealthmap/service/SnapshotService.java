@@ -27,6 +27,9 @@ public class SnapshotService {
     
     @Autowired
     private com.wealthmap.service.assets.GoldService goldService;
+
+    @Autowired
+    private com.wealthmap.service.assets.SilverService silverService;
     
     @Autowired
     private com.wealthmap.service.assets.FixedDepositService fdService;
@@ -63,6 +66,7 @@ public class SnapshotService {
                 
         List<AssetResponse> currentAssets = new java.util.ArrayList<>();
         currentAssets.addAll(goldService.getAllGoldForUser(user.getEmail()));
+        currentAssets.addAll(silverService.getAllSilverForUser(user.getEmail()));
         currentAssets.addAll(fdService.getAllFDsForUser(user.getEmail()));
         currentAssets.addAll(stockService.getAllStocksForUser(user.getEmail()));
         currentAssets.addAll(mfService.getAllMutualFundsForUser(user.getEmail()));

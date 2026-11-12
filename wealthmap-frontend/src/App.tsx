@@ -8,7 +8,7 @@ import Register from './pages/Register';
 import Dashboard from './pages/Dashboard';
 import Assets from './pages/Assets';
 import Family from './pages/Family';
-import Maturities from './pages/Maturities';
+import Calculators from './pages/Calculators';
 import Profile from './pages/Profile';
 import Liabilities from './pages/Liabilities';
 import Goals from './pages/Goals';
@@ -26,25 +26,45 @@ const queryClient = new QueryClient({
 import { ErrorBoundary } from './components/ErrorBoundary';
 import PrivacyPolicy from './pages/PrivacyPolicy';
 import NotFound from './pages/NotFound';
+import LandingPage from './pages/LandingPage';
 import { usePageMeta } from './hooks/usePageMeta';
+import { useAuthStore } from './store/authStore';
 
 function AppContent() {
   usePageMeta();
+  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
 
   return (
     <Routes>
+      <Route path="/landing" element={<LandingPage />} />
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />
       <Route path="/privacy" element={<PrivacyPolicy />} />
       
+      {/* Root Route: If authenticated -> Dashboard in AppLayout; else -> LandingPage */}
+      <Route
+        path="/"
+        element={
+          isAuthenticated ? (
+            <AppLayout />
+          ) : (
+            <LandingPage />
+          )
+        }
+      >
+        <Route index element={<Dashboard />} />
+      </Route>
+
+      {/* Protected Application Routes */}
       <Route element={<AppLayout />}>
-        <Route path="/" element={<Dashboard />} />
+        <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/assets" element={<Assets />} />
         <Route path="/liabilities" element={<Liabilities />} />
         <Route path="/goals" element={<Goals />} />
         <Route path="/assistant" element={<AiAssistantPage />} />
         <Route path="/family" element={<Family />} />
-        <Route path="/maturities" element={<Maturities />} />
+        <Route path="/calculators" element={<Calculators />} />
+        <Route path="/maturities" element={<Navigate to="/goals?tab=maturities" replace />} />
         <Route path="/profile" element={<Profile />} />
       </Route>
 

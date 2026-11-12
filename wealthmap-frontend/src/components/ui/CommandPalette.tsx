@@ -267,7 +267,18 @@ export default function CommandPalette({
         icon: Calendar,
         action: () => {
           onClose();
-          navigate('/maturities');
+          navigate('/goals?tab=maturities');
+        },
+      },
+      {
+        id: 'nav-calculators',
+        category: 'Navigation',
+        title: 'Go to Wealth Lab (Calculators)',
+        subtitle: 'Income Tax (New Regime), SWP, Retirement, SIP & Loan EMI',
+        icon: Calculator,
+        action: () => {
+          onClose();
+          navigate('/calculators');
         },
       },
       {
@@ -302,7 +313,7 @@ export default function CommandPalette({
         icon: Shield,
         action: () => {
           onClose();
-          navigate('/goals');
+          navigate('/goals?tab=emergency');
         },
       },
       {
@@ -313,7 +324,249 @@ export default function CommandPalette({
         icon: Calculator,
         action: () => {
           onClose();
-          navigate('/goals');
+          navigate('/calculators?tab=swp');
+        },
+      },
+      {
+        id: 'tool-tax',
+        category: 'Financial Planning',
+        title: 'Income Tax Calculator (New Regime)',
+        subtitle: 'Estimate FY 2024-25 to FY 2026-27 tax with 87A & NPS',
+        icon: Calculator,
+        action: () => {
+          onClose();
+          navigate('/calculators?tab=tax');
+        },
+      },
+      {
+        id: 'tool-ppf',
+        category: 'Financial Planning',
+        title: 'PPF Calculator',
+        subtitle: 'Calculate Public Provident Fund returns, maturity year & interest',
+        icon: Calculator,
+        action: () => {
+          onClose();
+          navigate('/calculators?tab=ppf');
+        },
+      },
+      {
+        id: 'tool-fd',
+        category: 'Financial Planning',
+        title: 'FD Calculator',
+        subtitle: 'Calculate Fixed Deposit maturity & compounding interest',
+        icon: Calculator,
+        action: () => {
+          onClose();
+          navigate('/calculators?tab=fd');
+        },
+      },
+      {
+        id: 'tool-rd',
+        category: 'Financial Planning',
+        title: 'RD Calculator',
+        subtitle: 'Calculate Recurring Deposit maturity & interest',
+        icon: Calculator,
+        action: () => {
+          onClose();
+          navigate('/calculators?tab=rd');
+        },
+      },
+      {
+        id: 'tool-prepayment',
+        category: 'Financial Planning',
+        title: 'Home Loan Prepayment Calculator',
+        subtitle: 'Simulate EMI with recurring & lumpsum part payments',
+        icon: Calculator,
+        action: () => {
+          onClose();
+          navigate('/calculators?tab=prepayment');
+        },
+      },
+      {
+        id: 'tool-fixed-principal',
+        category: 'Financial Planning',
+        title: 'Fixed Principal Loan Calculator',
+        subtitle: 'Declining monthly payments with fixed principal & balloon option',
+        icon: Calculator,
+        action: () => {
+          onClose();
+          navigate('/calculators?tab=fixed-principal');
+        },
+      },
+      {
+        id: 'tool-expense-ratio',
+        category: 'Financial Planning',
+        title: 'MF Expense Ratio Calculator',
+        subtitle: 'Measure long-term opportunity cost of mutual fund expense ratio',
+        icon: Calculator,
+        action: () => {
+          onClose();
+          navigate('/calculators?tab=expense-ratio');
+        },
+      },
+      {
+        id: 'tool-step-up-sip',
+        category: 'Financial Planning',
+        title: 'Step-Up SIP Calculator',
+        subtitle: 'Measure mutual fund returns with annual incremental SIPs',
+        icon: Calculator,
+        action: () => {
+          onClose();
+          navigate('/calculators?tab=step-up-sip');
+        },
+      },
+      {
+        id: 'tool-xirr',
+        category: 'Financial Planning',
+        title: 'XIRR Calculator',
+        subtitle: 'Calculate exact annualized XIRR for SIPs & irregular cash flows',
+        icon: Calculator,
+        action: () => {
+          onClose();
+          navigate('/calculators?tab=xirr');
+        },
+      },
+      {
+        id: 'tool-ssy',
+        category: 'Financial Planning',
+        title: 'SSY Calculator (Sukanya Samriddhi)',
+        subtitle: 'Calculate 21-year Sukanya Samriddhi Yojana maturity & interest',
+        icon: Calculator,
+        action: () => {
+          onClose();
+          navigate('/calculators?tab=ssy');
+        },
+      },
+      {
+        id: 'tool-nsc',
+        category: 'Financial Planning',
+        title: 'NSC Calculator (National Savings Certificate)',
+        subtitle: 'Calculate 5-year NSC maturity, interest & growth table',
+        icon: Calculator,
+        action: () => {
+          onClose();
+          navigate('/calculators?tab=nsc');
+        },
+      },
+      {
+        id: 'tool-epf',
+        category: 'Financial Planning',
+        title: 'EPF / PF Calculator',
+        subtitle: 'Estimate Employee Provident Fund retirement corpus at 8.25%',
+        icon: Calculator,
+        action: () => {
+          onClose();
+          navigate('/calculators?tab=epf');
+        },
+      },
+      {
+        id: 'tool-scss',
+        category: 'Financial Planning',
+        title: 'SCSS Calculator (Senior Citizen Savings)',
+        subtitle: 'Calculate monthly, quarterly & yearly income under SCSS (8.2%)',
+        icon: Calculator,
+        action: () => {
+          onClose();
+          navigate('/calculators?tab=scss');
+        },
+      },
+      {
+        id: 'tool-goal-planner',
+        category: 'Financial Planning',
+        title: 'Goal-Based Wealth Planner',
+        subtitle: 'Plan multiple life goals with inflation, corpus & YoY schedule',
+        icon: Calculator,
+        action: () => {
+          onClose();
+          navigate('/goals?tab=planner');
+        },
+      },
+      {
+        id: 'tool-gold-price',
+        category: 'Financial Planning',
+        title: 'Live Gold Price Calculator',
+        subtitle: 'Estimate gold price by purity (24K–8K), GST & making charges',
+        icon: Calculator,
+        action: () => {
+          onClose();
+          navigate('/assets?metals=gold-price');
+        },
+      },
+      {
+        id: 'tool-gold-profit',
+        category: 'Financial Planning',
+        title: 'Gold Profit Analyzer',
+        subtitle: 'Analyze gold P&L across purchases with SGB & LTCG/STCG tax',
+        icon: Calculator,
+        action: () => {
+          onClose();
+          navigate('/assets?metals=gold-profit');
+        },
+      },
+      {
+        id: 'tool-silver-price',
+        category: 'Financial Planning',
+        title: 'Live Silver Price Calculator',
+        subtitle: 'Estimate silver price with GST, making charges & service tax',
+        icon: Calculator,
+        action: () => {
+          onClose();
+          navigate('/assets?metals=silver-price');
+        },
+      },
+      {
+        id: 'tool-multi-asset',
+        category: 'Financial Planning',
+        title: 'Multi-Asset Wealth Calculator Pro',
+        subtitle: 'Consolidated year-on-year projection across all asset classes',
+        icon: Calculator,
+        action: () => {
+          onClose();
+          navigate('/calculators?tab=multi-asset');
+        },
+      },
+      {
+        id: 'tool-wealth-calculator',
+        category: 'Financial Planning',
+        title: 'Future Wealth Calculator',
+        subtitle: 'Plan long-term wealth with step-up, inflation & goal withdrawals',
+        icon: Calculator,
+        action: () => {
+          onClose();
+          navigate('/calculators?tab=wealth-calculator');
+        },
+      },
+      {
+        id: 'tool-inflation',
+        category: 'Financial Planning',
+        title: 'Inflation Calculator',
+        subtitle: 'Measure future cost & purchasing power erosion over time',
+        icon: Calculator,
+        action: () => {
+          onClose();
+          navigate('/calculators?tab=inflation');
+        },
+      },
+      {
+        id: 'tool-mortgage',
+        category: 'Financial Planning',
+        title: 'Mortgage Calculator (INR)',
+        subtitle: 'Estimate monthly home-buying payment with tax, insurance & HOA',
+        icon: Calculator,
+        action: () => {
+          onClose();
+          navigate('/calculators?tab=mortgage');
+        },
+      },
+      {
+        id: 'tool-nps',
+        category: 'Financial Planning',
+        title: 'NPS Pension Calculator',
+        subtitle: 'Estimate NPS corpus, lumpsum, annuity & monthly pension',
+        icon: Calculator,
+        action: () => {
+          onClose();
+          navigate('/calculators?tab=nps');
         },
       },
     ];

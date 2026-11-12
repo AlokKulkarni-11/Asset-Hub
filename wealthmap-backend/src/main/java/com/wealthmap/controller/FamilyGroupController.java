@@ -194,6 +194,9 @@ public class FamilyGroupController {
 
     @Autowired
     private com.wealthmap.service.assets.GoldService goldService;
+
+    @Autowired
+    private com.wealthmap.service.assets.SilverService silverService;
     
     @Autowired
     private com.wealthmap.service.assets.FixedDepositService fdService;
@@ -224,6 +227,7 @@ public class FamilyGroupController {
         
         for (User member : members) {
             familyAssets.addAll(goldService.getAllGoldForUser(member.getEmail()));
+            familyAssets.addAll(silverService.getAllSilverForUser(member.getEmail()));
             familyAssets.addAll(fdService.getAllFDsForUser(member.getEmail()));
             familyAssets.addAll(stockService.getAllStocksForUser(member.getEmail()));
             familyAssets.addAll(mfService.getAllMutualFundsForUser(member.getEmail()));

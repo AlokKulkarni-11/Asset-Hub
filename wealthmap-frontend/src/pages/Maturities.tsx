@@ -7,7 +7,11 @@ import { AssetResponse } from '../api/assets.api';
 import { Clock, Loader2, TrendingUp, AlertTriangle, Bell, ShieldAlert } from 'lucide-react';
 import { differenceInDays, parseISO } from 'date-fns';
 
-export default function Maturities() {
+interface MaturitiesProps {
+  embedded?: boolean;
+}
+
+export default function Maturities({ embedded = false }: MaturitiesProps) {
   const { data: assets, isLoading: assetsLoading } = useQuery({
     queryKey: ['assets', 'all'],
     queryFn: getAllAssets,
@@ -100,10 +104,12 @@ export default function Maturities() {
 
   return (
     <div className="space-y-8 animate-in slide-in-from-bottom-4 fade-in duration-500">
-      <div>
-        <h1 className="text-heading text-2xl font-dmsans">Upcoming Maturities</h1>
-        <p className="text-text-secondary mt-2">Track fixed deposits and other assets nearing completion.</p>
-      </div>
+      {!embedded && (
+        <div>
+          <h1 className="text-heading text-2xl font-dmsans">Upcoming Maturities</h1>
+          <p className="text-text-secondary mt-2">Track fixed deposits and other assets nearing completion.</p>
+        </div>
+      )}
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className="glass-card p-6 border border-sky-500/20 bg-sky-500/5">

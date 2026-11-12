@@ -3,8 +3,12 @@ import { useLocation } from 'react-router-dom';
 
 const PAGE_META_MAP: Record<string, { title: string; description: string }> = {
   '/': {
-    title: 'Dashboard — Asset Hub',
+    title: 'Asset Hub — The Modern Wealth Operating System',
     description: 'Track your overall wealth, asset allocation, net worth trends, and portfolio metrics in real time.',
+  },
+  '/landing': {
+    title: 'Asset Hub — The Modern Wealth Operating System',
+    description: 'Unify Equities, Mutual Funds, Physical Gold, Fixed Deposits, Real Estate, Cryptos, and Liabilities into one intelligent real-time dashboard.',
   },
   '/assets': {
     title: 'Assets Portfolio — Asset Hub',
@@ -16,7 +20,11 @@ const PAGE_META_MAP: Record<string, { title: string; description: string }> = {
   },
   '/goals': {
     title: 'Goals & Financial Planning — Asset Hub',
-    description: 'Plan milestone goals, retirement readiness, and systematic withdrawal plans (SWP).',
+    description: 'Plan milestone goals, emergency preparedness, and track upcoming asset maturities.',
+  },
+  '/calculators': {
+    title: 'Wealth Lab — Financial & Tax Calculators — Asset Hub',
+    description: 'Simulate New Regime income tax, systematic withdrawal plans (SWP), retirement readiness, SIP compounding, and loan EMIs.',
   },
   '/assistant': {
     title: 'Hub Mate AI Assistant — Asset Hub',

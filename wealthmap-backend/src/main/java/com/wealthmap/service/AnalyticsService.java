@@ -23,6 +23,7 @@ import java.util.stream.Collectors;
 public class AnalyticsService {
 
     private final GoldService goldService;
+    private final SilverService silverService;
     private final FixedDepositService fdService;
     private final StockService stockService;
     private final MutualFundService mfService;
@@ -35,6 +36,7 @@ public class AnalyticsService {
     public List<AssetResponse> getAllAssetsForUser(String userEmail) {
         List<AssetResponse> allAssets = new ArrayList<>();
         allAssets.addAll(goldService.getAllGoldForUser(userEmail));
+        allAssets.addAll(silverService.getAllSilverForUser(userEmail));
         allAssets.addAll(fdService.getAllFDsForUser(userEmail));
         allAssets.addAll(stockService.getAllStocksForUser(userEmail));
         allAssets.addAll(mfService.getAllMutualFundsForUser(userEmail));

@@ -1,13 +1,14 @@
 import React, { useState, useEffect } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { Plus, Coins, Landmark, TrendingUp, MoreVertical, Edit2, Trash2, ChevronDown, ChevronUp, Briefcase, Building2, Download, HardDrive, Sparkles, ScrollText } from 'lucide-react';
+import { Plus, Coins, Landmark, TrendingUp, MoreVertical, Edit2, Trash2, ChevronDown, ChevronUp, Briefcase, Building2, Download, HardDrive, Sparkles, ScrollText, X } from 'lucide-react';
 import { getAllAssets, deleteAsset } from '../api/assets.api';
 import type { AssetResponse } from '../api/assets.api';
 import { getAnalyticsSummary } from '../api/analytics.api';
 import { getMyFamily } from '../api/family.api';
 import AssetSelectorModal from '../components/forms/AssetSelectorModal';
 import AddGoldForm from '../components/forms/AddGoldForm';
+import AddSilverForm from '../components/forms/AddSilverForm';
 import AddFDForm from '../components/forms/AddFDForm';
 import AddStockForm from '../components/forms/AddStockForm';
 import AddMutualFundForm from '../components/forms/AddMutualFundForm';
@@ -18,10 +19,16 @@ import AddEsopRsuForm from '../components/forms/AddEsopRsuForm';
 import ConfirmDialog from '../components/ui/ConfirmDialog';
 import ExportModal from '../components/forms/ExportModal';
 import { DocumentVaultModal } from '../components/documents/DocumentVaultModal';
+import GoldPriceCalculator from '../components/calculators/GoldPriceCalculator';
+import SilverPriceCalculator from '../components/calculators/SilverPriceCalculator';
+import GoldProfitCalculator from '../components/calculators/GoldProfitCalculator';
+
+type MetalsToolTab = 'gold-price' | 'silver-price' | 'gold-profit';
 
 export default function Assets() {
   const location = useLocation();
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
 
   const [showGoldModal, setShowGoldModal] = useState(false);
   const [isExportOpen, setIsExportOpen] = useState(false);
@@ -30,6 +37,25 @@ export default function Assets() {
   const [assetToDelete, setAssetToDelete] = useState<number | null>(null);
   const [selectedAssetForDocs, setSelectedAssetForDocs] = useState<{ id?: number; name?: string; type?: string } | null>(null);
   const [isVaultOpen, setIsVaultOpen] = useState(false);
+  const [metalsToolTab, setMetalsToolTab] = useState<MetalsToolTab | null>(() => {
+    const param = searchParams.get('metals') as MetalsToolTab | null;
+    return param && ['gold-price', 'silver-price', 'gold-profit'].includes(param) ? param : null;
+  });
+
+  useEffect(() => {
+    const param = searchParams.get('metals') as MetalsToolTab | null;
+    if (param && ['gold-price', 'silver-price', 'gold-profit'].includes(param)) {
+      setMetalsToolTab(param);
+    }
+  }, [searchParams]);
+
+  const closeMetalsModal = () => {
+    setMetalsToolTab(null);
+    if (searchParams.has('metals')) {
+      searchParams.delete('metals');
+      setSearchParams(searchParams, { replace: true });
+    }
+  };
   
   // 3-Level Accordion State
   const [expandedCategory, setExpandedCategory] = useState<string | null>(null);
@@ -82,6 +108,7 @@ export default function Assets() {
 
   const getSubGroupName = (asset: any) => {
     if (asset.assetType === 'GOLD') return asset.purity ? asset.purity.replace(/_/g, ' ') : 'Other Gold';
+    if (asset.assetType === 'SILVER') return asset.purity ? asset.purity.replace(/_/g, ' ') : 'Other Silver';
     if (asset.assetType === 'STOCK') return asset.ticker || 'Other Stocks';
     if (asset.assetType === 'FIXED_DEPOSIT') return asset.bankName || 'Other Banks';
     if (asset.assetType === 'MUTUAL_FUND') return asset.schemeName || 'Other Mutual Funds';
@@ -178,7 +205,14 @@ export default function Assets() {
           <h1 className="text-heading">Your Assets</h1>
           <p className="text-text-secondary text-xs mt-0.5">Track and manage your diverse portfolio of holdings</p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
+          <button 
+            onClick={() => setMetalsToolTab('gold-price')}
+            className="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-amber-500/10 border border-amber-500/30 hover:bg-amber-500/20 text-amber-600 dark:text-amber-400 text-sm font-medium transition-all shadow-sm"
+          >
+            <Coins className="w-4 h-4" />
+            Gold &amp; Silver Tools
+          </button>
           <button 
             onClick={() => setIsVaultOpen(true)}
             className="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-surface border border-border hover:bg-surface-hover text-indigo-600 hover:text-indigo-700 text-sm font-medium transition-all shadow-sm"
@@ -209,8 +243,77 @@ export default function Assets() {
         <AssetSelectorModal onClose={() => setShowGoldModal(false)} />
       )}
 
+      {/* Gold & Silver Price Tracker / Profit Analyzer Modal */}
+      {metalsToolTab && (
+        <div className="fixed inset-0 bg-zinc-950/50 z-50 flex items-center justify-center p-4">
+          <div className="bg-surface rounded-xl border border-border shadow-2xl w-full max-w-5xl max-h-[90vh] flex flex-col overflow-hidden">
+            <div className="px-6 py-4 border-b border-border flex flex-wrap items-center justify-between gap-3 bg-surface-hover/50">
+              <div className="flex items-center gap-2">
+                <Coins className="w-5 h-5 text-amber-500" />
+                <h2 className="text-lg font-bold text-text-primary">
+                  Gold &amp; Silver Tracker &amp; Profit Analyzer
+                </h2>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="flex flex-wrap gap-1 p-1 bg-surface-hover rounded-xl border border-border">
+                  <button
+                    type="button"
+                    onClick={() => setMetalsToolTab('gold-price')}
+                    className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition-all ${
+                      metalsToolTab === 'gold-price'
+                        ? 'bg-surface shadow-sm border border-border text-amber-500'
+                        : 'text-text-secondary hover:text-text-primary'
+                    }`}
+                  >
+                    Live Gold Price
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setMetalsToolTab('silver-price')}
+                    className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition-all ${
+                      metalsToolTab === 'silver-price'
+                        ? 'bg-surface shadow-sm border border-border text-accent-500'
+                        : 'text-text-secondary hover:text-text-primary'
+                    }`}
+                  >
+                    Live Silver Price
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setMetalsToolTab('gold-profit')}
+                    className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition-all ${
+                      metalsToolTab === 'gold-profit'
+                        ? 'bg-surface shadow-sm border border-border text-emerald-500'
+                        : 'text-text-secondary hover:text-text-primary'
+                    }`}
+                  >
+                    Gold Profit Analyzer
+                  </button>
+                </div>
+                <button
+                  type="button"
+                  onClick={closeMetalsModal}
+                  className="p-1.5 rounded-lg text-text-secondary hover:text-text-primary hover:bg-surface-hover"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+            </div>
+
+            <div className="p-6 overflow-y-auto flex-1">
+              {metalsToolTab === 'gold-price' && <GoldPriceCalculator />}
+              {metalsToolTab === 'silver-price' && <SilverPriceCalculator />}
+              {metalsToolTab === 'gold-profit' && <GoldProfitCalculator />}
+            </div>
+          </div>
+        </div>
+      )}
+
       {editingAsset?.assetType === 'GOLD' && (
         <AddGoldForm initialData={editingAsset} onClose={() => setEditingAsset(null)} />
+      )}
+      {editingAsset?.assetType === 'SILVER' && (
+        <AddSilverForm initialData={editingAsset} onClose={() => setEditingAsset(null)} />
       )}
       {editingAsset?.assetType === 'FIXED_DEPOSIT' && (
         <AddFDForm initialData={editingAsset} onClose={() => setEditingAsset(null)} />

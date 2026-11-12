@@ -199,6 +199,52 @@ export const updateGoldAsset = async (id: number, payload: GoldRequest): Promise
   return data;
 };
 
+// Silver Operations
+export interface SilverRequest {
+  name: string;
+  purchaseDate: string;
+  notes?: string;
+  weightGrams: number;
+  purity: 'P999' | 'P925' | 'P900' | 'P800';
+  purchasePrice: number;
+  currency?: string;
+  nomineeName?: string;
+  nomineeRelationship?: string;
+}
+
+export const getSilverAssets = async (): Promise<AssetResponse[]> => {
+  const { data } = await api.get('/assets/silver');
+  return data;
+};
+
+export const getSilverAsset = async (id: number): Promise<any> => {
+  const { data } = await api.get(`/assets/silver/${id}`);
+  return data;
+};
+
+export const addSilverAsset = async (payload: SilverRequest): Promise<AssetResponse> => {
+  const { data } = await api.post('/assets/silver', payload);
+  return data;
+};
+
+export const updateSilverAsset = async (id: number, payload: SilverRequest): Promise<AssetResponse> => {
+  const { data } = await api.put(`/assets/silver/${id}`, payload);
+  return data;
+};
+
+export interface MetalRatesResponse {
+  gold24kPerGram: number;
+  gold22kPerGram: number;
+  silverPerGram: number;
+  currency: string;
+  source: string;
+}
+
+export const getLiveMetalRates = async (): Promise<MetalRatesResponse> => {
+  const { data } = await api.get('/assets/metals/rates');
+  return data;
+};
+
 // Fixed Deposit Operations
 export const getFDAssets = async (): Promise<AssetResponse[]> => {
   const { data } = await api.get('/assets/fd');

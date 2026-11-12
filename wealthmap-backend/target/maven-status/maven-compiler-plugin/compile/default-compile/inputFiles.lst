@@ -4,6 +4,7 @@ C:\Users\alokk\OneDrive\Desktop\WealthMap\wealthmap-backend\src\main\java\com\we
 C:\Users\alokk\OneDrive\Desktop\WealthMap\wealthmap-backend\src\main\java\com\wealthmap\dto\response\CryptoSearchResponse.java
 C:\Users\alokk\OneDrive\Desktop\WealthMap\wealthmap-backend\src\main\java\com\wealthmap\repository\FinancialGoalRepository.java
 C:\Users\alokk\OneDrive\Desktop\WealthMap\wealthmap-backend\src\main\java\com\wealthmap\service\SnapshotService.java
+C:\Users\alokk\OneDrive\Desktop\WealthMap\wealthmap-backend\src\main\java\com\wealthmap\dto\response\SilverResponse.java
 C:\Users\alokk\OneDrive\Desktop\WealthMap\wealthmap-backend\src\main\java\com\wealthmap\entity\PersonalLoan.java
 C:\Users\alokk\OneDrive\Desktop\WealthMap\wealthmap-backend\src\main\java\com\wealthmap\entity\MutualFund.java
 C:\Users\alokk\OneDrive\Desktop\WealthMap\wealthmap-backend\src\main\java\com\wealthmap\dto\request\LiabilityRequest.java
@@ -33,11 +34,14 @@ C:\Users\alokk\OneDrive\Desktop\WealthMap\wealthmap-backend\src\main\java\com\we
 C:\Users\alokk\OneDrive\Desktop\WealthMap\wealthmap-backend\src\main\java\com\wealthmap\dto\request\StockRequest.java
 C:\Users\alokk\OneDrive\Desktop\WealthMap\wealthmap-backend\src\main\java\com\wealthmap\service\price\RealEstatePriceProvider.java
 C:\Users\alokk\OneDrive\Desktop\WealthMap\wealthmap-backend\src\main\java\com\wealthmap\entity\GoldItem.java
+C:\Users\alokk\OneDrive\Desktop\WealthMap\wealthmap-backend\src\main\java\com\wealthmap\enums\SilverPurity.java
 C:\Users\alokk\OneDrive\Desktop\WealthMap\wealthmap-backend\src\main\java\com\wealthmap\service\price\CryptoPriceProvider.java
 C:\Users\alokk\OneDrive\Desktop\WealthMap\wealthmap-backend\src\main\java\com\wealthmap\dto\request\GoldRequest.java
 C:\Users\alokk\OneDrive\Desktop\WealthMap\wealthmap-backend\src\main\java\com\wealthmap\dto\response\AnalyticsSummaryResponse.java
+C:\Users\alokk\OneDrive\Desktop\WealthMap\wealthmap-backend\src\main\java\com\wealthmap\entity\SilverItem.java
 C:\Users\alokk\OneDrive\Desktop\WealthMap\wealthmap-backend\src\main\java\com\wealthmap\repository\AssetRepository.java
 C:\Users\alokk\OneDrive\Desktop\WealthMap\wealthmap-backend\src\main\java\com\wealthmap\entity\EsopRsu.java
+C:\Users\alokk\OneDrive\Desktop\WealthMap\wealthmap-backend\src\main\java\com\wealthmap\controller\SilverController.java
 C:\Users\alokk\OneDrive\Desktop\WealthMap\wealthmap-backend\src\main\java\com\wealthmap\controller\AiController.java
 C:\Users\alokk\OneDrive\Desktop\WealthMap\wealthmap-backend\src\main\java\com\wealthmap\entity\Cryptocurrency.java
 C:\Users\alokk\OneDrive\Desktop\WealthMap\wealthmap-backend\src\main\java\com\wealthmap\dto\response\RetirementResponse.java
@@ -72,6 +76,7 @@ C:\Users\alokk\OneDrive\Desktop\WealthMap\wealthmap-backend\src\main\java\com\we
 C:\Users\alokk\OneDrive\Desktop\WealthMap\wealthmap-backend\src\main\java\com\wealthmap\dto\response\FixedDepositResponse.java
 C:\Users\alokk\OneDrive\Desktop\WealthMap\wealthmap-backend\src\main\java\com\wealthmap\repository\NetWorthSnapshotRepository.java
 C:\Users\alokk\OneDrive\Desktop\WealthMap\wealthmap-backend\src\main\java\com\wealthmap\service\GoalService.java
+C:\Users\alokk\OneDrive\Desktop\WealthMap\wealthmap-backend\src\main\java\com\wealthmap\dto\request\SilverRequest.java
 C:\Users\alokk\OneDrive\Desktop\WealthMap\wealthmap-backend\src\main\java\com\wealthmap\enums\BondType.java
 C:\Users\alokk\OneDrive\Desktop\WealthMap\wealthmap-backend\src\main\java\com\wealthmap\enums\GoldPurity.java
 C:\Users\alokk\OneDrive\Desktop\WealthMap\wealthmap-backend\src\main\java\com\wealthmap\dto\request\ForgotPasswordRequest.java
@@ -112,6 +117,7 @@ C:\Users\alokk\OneDrive\Desktop\WealthMap\wealthmap-backend\src\main\java\com\we
 C:\Users\alokk\OneDrive\Desktop\WealthMap\wealthmap-backend\src\main\java\com\wealthmap\service\FamilyRollupService.java
 C:\Users\alokk\OneDrive\Desktop\WealthMap\wealthmap-backend\src\main\java\com\wealthmap\repository\PasswordResetTokenRepository.java
 C:\Users\alokk\OneDrive\Desktop\WealthMap\wealthmap-backend\src\main\java\com\wealthmap\repository\UserRepository.java
+C:\Users\alokk\OneDrive\Desktop\WealthMap\wealthmap-backend\src\main\java\com\wealthmap\service\price\SilverPriceProvider.java
 C:\Users\alokk\OneDrive\Desktop\WealthMap\wealthmap-backend\src\main\java\com\wealthmap\entity\EducationLoan.java
 C:\Users\alokk\OneDrive\Desktop\WealthMap\wealthmap-backend\src\main\java\com\wealthmap\service\assets\GoldService.java
 C:\Users\alokk\OneDrive\Desktop\WealthMap\wealthmap-backend\src\main\java\com\wealthmap\dto\request\WhatIfRequest.java
@@ -131,6 +137,7 @@ C:\Users\alokk\OneDrive\Desktop\WealthMap\wealthmap-backend\src\main\java\com\we
 C:\Users\alokk\OneDrive\Desktop\WealthMap\wealthmap-backend\src\main\java\com\wealthmap\service\price\PriceProvider.java
 C:\Users\alokk\OneDrive\Desktop\WealthMap\wealthmap-backend\src\main\java\com\wealthmap\dto\response\SnapshotResponse.java
 C:\Users\alokk\OneDrive\Desktop\WealthMap\wealthmap-backend\src\main\java\com\wealthmap\entity\FamilyInvite.java
+C:\Users\alokk\OneDrive\Desktop\WealthMap\wealthmap-backend\src\main\java\com\wealthmap\service\assets\SilverService.java
 C:\Users\alokk\OneDrive\Desktop\WealthMap\wealthmap-backend\src\main\java\com\wealthmap\dto\request\MutualFundRequest.java
 C:\Users\alokk\OneDrive\Desktop\WealthMap\wealthmap-backend\src\main\java\com\wealthmap\config\SecurityConfig.java
 C:\Users\alokk\OneDrive\Desktop\WealthMap\wealthmap-backend\src\main\java\com\wealthmap\dto\response\RebalancingResponse.java

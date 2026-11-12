@@ -1,118 +1,59 @@
-# Backend Snapshots Deep Dive
+﻿# Backend Snapshots & Automation Deep Dive
 
-This module captures historical net-worth snapshots so the dashboard can show trends over time. It computes current totals on demand, stores them, and then reads them back in date order for charting.
+This document covers AssetHub’s snapshot and background automation architecture: **Historical Net Worth Snapshots**, **Live Price Alerts**, **Maturity Reminders**, **Weekly/Monthly Email Digests**, and **Portfolio Rebalancing Nudges**.
+
+---
 
 ## 1. Architecture Overview
 
-`SnapshotService` aggregates current assets and liabilities, writes one `NetWorthSnapshot` per day, and reads those snapshots back for history views. The controller is thin and just exposes endpoints to fetch snapshots or capture a fresh one. This module is the bridge between live portfolio state and chart-friendly historical data.
+AssetHub includes a background scheduling and historical time-series engine that captures daily portfolio states and executes automated notification workflows via Spring's scheduling framework and the Brevo HTTP API.
 
-Top-level modules:
-- `controller`: snapshot endpoints.
-- `service`: snapshot capture and retrieval.
-- `entity`: snapshot persistence model.
-- `repository`: JPA access for snapshots and users.
-- `service/assets` and `service/LiabilityService`: data sources for the snapshot totals.
+```
+[Spring Scheduler (@Scheduled)]
+            |
+  +---------+---------+---------+---------+
+  |                   |                   |                   |
+[Daily Snapshot]  [Price Alert]   [Maturity Scan]    [Digest Runner]
+  |                   |                   |                   |
+Persist to DB    Evaluate Rules     Find items near     Generate Summary
+(net_worth_hist) (stocks/gold)      maturity date       HTML Email
+                      |                   |                   |
+                      +---------+---------+                   |
+                                |                             |
+                    [Brevo HTTP API Delivery] <---------------+
+```
 
-Typical snapshot flow:
-1. Dashboard loads.
-2. Frontend asks for snapshots.
-3. Controller resolves the current user.
-4. Service gathers current asset and liability values.
-5. Totals are saved as today’s snapshot.
-6. Snapshot history is returned in date order.
+### Key Components:
+- `com.wealthmap.entity.Snapshot`: Stores historical timestamp, total asset value, total liability value, and computed net worth.
+- `com.wealthmap.controller.SnapshotController`: REST endpoints (`/api/snapshots/**`) for fetching historical time-series data with time-range filtering (`1M`, `3M`, `6M`, `1Y`, `ALL`).
+- `com.wealthmap.controller.AlertController`: REST endpoints (`/api/alerts/**`) for user price alerts and notification preferences.
+- `com.wealthmap.service.AlertService`: Scans live market prices against user-defined alert thresholds.
+- `com.wealthmap.service.BrevoEmailService`: Sends transactional and scheduled notification emails via Brevo HTTP API.
 
-## 2. Feature-by-Feature Breakdown
+---
 
-Snapshot features:
-- Capture current snapshot
-- List snapshots
+## 2. Background Automation Workflows
 
-### Feature: Capture snapshot
+### 2.1 Daily Net Worth Snapshotting
+- Executes every midnight via `@Scheduled(cron = "0 0 0 * * *")`.
+- Calculates the user's latest total asset valuation in INR, total liabilities in INR, and true net worth.
+- Persists a new row to `net_worth_snapshots`, enabling the multi-line historical trend chart on the dashboard.
 
-**What it does**
-Calculates current total assets, liabilities, invested amount, and net worth and stores them for today.
+### 2.2 Live Price Threshold Alerts
+- Scans user-configured price alerts every 5 minutes (`automation.price-alert.scan-ms=300000`).
+- Compares live ticker prices (from Yahoo Finance / AMFI / CoinGecko) against target high/low thresholds.
+- When triggered, creates an in-app notification and delivers a Brevo email alert, marking the alert as triggered.
 
-**Files involved**
-- `wealthmap-backend/src/main/java/com/wealthmap/controller/SnapshotController.java`
-- `wealthmap-backend/src/main/java/com/wealthmap/service/SnapshotService.java`
-- `wealthmap-backend/src/main/java/com/wealthmap/entity/NetWorthSnapshot.java`
-- `wealthmap-backend/src/main/java/com/wealthmap/repository/NetWorthSnapshotRepository.java`
+### 2.3 Upcoming Maturity Reminders
+- Scans all Fixed Deposits, Bonds, and Loans daily at 8:00 AM (`automation.maturity.scan-cron=0 0 8 * * *`).
+- Flags instruments maturing within the configured reminder window (default 7 days).
+- Dispatches formatted email notices with principal amount, bank name, estimated maturity payout, and days remaining.
 
-**Step-by-step trace**
-1. Controller loads the user by email.
-2. `captureSnapshotNow(...)` loads current assets and liabilities.
-3. Totals are summed.
-4. Existing snapshot for today is reused if found.
-5. Snapshot fields are updated and saved.
+### 2.4 Weekly & Monthly Portfolio Digest Emails
+- **Weekly Digest**: Runs every Monday at 9:00 AM (`automation.digest.weekly-cron=0 0 9 * * MON`).
+- **Monthly Digest**: Runs on the 1st of every month at 9:00 AM (`automation.digest.monthly-cron=0 0 9 1 * *`).
+- Synthesizes weekly/monthly net worth changes ($\Delta W$), top gaining/losing assets, upcoming maturities, and debt status into an email report.
 
-**State management**
-- Snapshot data is stored permanently.
-- The current calculation is request-scoped until saved.
-
-**Validation & error handling**
-- Missing user causes an error.
-
-**Edge cases**
-- Existing snapshot for the same day is updated instead of duplicated.
-
-### Feature: Snapshot history
-
-**What it does**
-Returns all stored snapshots for a user in ascending date order.
-
-**Files involved**
-- `wealthmap-backend/src/main/java/com/wealthmap/controller/SnapshotController.java`
-- `wealthmap-backend/src/main/java/com/wealthmap/service/SnapshotService.java`
-- `wealthmap-backend/src/main/java/com/wealthmap/dto/response/SnapshotResponse.java`
-
-**Step-by-step trace**
-1. Controller resolves the user.
-2. Service fetches snapshots ordered by date.
-3. Snapshots are mapped into response DTOs.
-4. Frontend renders the time series.
-
-**State management**
-- Read-only historical data comes from the DB.
-
-**Validation & error handling**
-- Missing user throws an error.
-
-**Edge cases**
-- Older rows with missing total assets or liabilities are normalized in mapping with fallback values.
-
-## 3. Library & Pattern Justification
-
-- **One snapshot per day**
-  - Solves the need for historical trend charts without overly granular duplicates.
-  - Without it, the chart could be noisy and redundant.
-  - Alternative: hourly or event-based snapshots. Tradeoff: more detail, more storage.
-
-## 4. Database & Data Model
-
-Table:
-- `net_worth_snapshots`
-
-Relationships:
-- Each snapshot belongs to one `User`.
-
-Integrity reliance:
-- The snapshot reflects whatever current asset/liability values the services return at capture time.
-
-## 5. Security & Access Notes
-
-Snapshots are user-specific, so the controller always resolves the current user before reading or writing. The app does not let the client submit arbitrary snapshot totals, which is good because snapshot values must come from backend calculation, not user input.
-
-Potential gaps:
-- There is no scheduling logic shown here for automatic daily snapshots; capture appears to be manual/on-demand.
-
-## 6. Likely Interview Questions
-
-- **Why capture snapshots in the backend instead of the frontend?**
-  - Because the backend owns financial truth and can persist the calculation reliably.
-
-- **Why reuse today’s snapshot if it already exists?**
-  - Because the app wants one record per day rather than duplicates.
-
-- **Why store total assets and liabilities separately?**
-  - So the app can reconstruct the breakdown later instead of only storing net worth.
-
+### 2.5 Target Allocation & Drift Rebalancing Nudges
+- Compares current asset allocation (Equity vs. Debt vs. Gold vs. Real Estate) against the user's target percentages.
+- Triggers a dashboard rebalancing nudge whenever category drift exceeds the threshold ($\pm 5\%$).

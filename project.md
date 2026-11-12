@@ -21,7 +21,7 @@ Most net-worth trackers are simple ledgers where you just type in a number. Asse
 - **Security:** Spring Security + Stateless JWT Authentication + Two-Factor Authentication (TOTP) + Family Role-Based Access Control (RBAC) + Row Level Security (RLS)
 - **Architecture:** Controller-Service-Repository pattern with Polymorphic DTOs for heterogeneous assets and liabilities
 - **Inheritance Strategy:** JOINED table inheritance for asset and liability subtypes
-- **Integrations:** Yahoo Finance API (Live Stock & Gold prices), AMFI India API (Live Mutual Fund NAV), CoinGecko API (Live Cryptocurrency prices), Brevo API (Email Invites, OTPs, and automation emails), QR Server API (2FA TOTP onboarding)
+- **Integrations:** IBJA (`ibjarates.com` Live Indian Gold & Silver rates), Yahoo Finance API (Live Stock & Commodity Futures fallback), AMFI India API (Live Mutual Fund NAV), CoinGecko API (Live Cryptocurrency prices), Brevo API (Email Invites, OTPs, and automation emails), QR Server API (2FA TOTP onboarding)
 
 ## What is Implemented
 
@@ -29,6 +29,7 @@ Most net-worth trackers are simple ledgers where you just type in a number. Asse
 - **Authentication & Security:** Secure user registration, login, JWT-based session management, and database-level RLS policies to strictly isolate user data.
 - **Polymorphic Data Models:** A unified `Asset` base table extending out to specialized tables using JOINED inheritance strategy:
   - `gold_items` - Physical gold tracking with purity and weight
+  - `silver_items` - Physical silver commodity tracking with purity (`P999`, `P925`, `P900`, `P800`) and weight
   - `fixed_deposits` - FDs with compound interest calculations
   - `stocks` - Stock holdings with live price updates
   - `mutual_funds` - Mutual fund investments with NAV tracking
@@ -37,7 +38,7 @@ Most net-worth trackers are simple ledgers where you just type in a number. Asse
 ### Real-Time Pricing Engine
 - **Stocks:** Live ticker fetching from Yahoo Finance with typeahead search
 - **Mutual Funds:** Live NAV fetching with smart search (50+ results)
-- **Gold:** Live Spot Gold (USD/Ounce) fetching, Forex INR conversion, and physical market premium logic
+- **Gold & Silver:** Live Indian market benchmark rates fetched directly from IBJA (`ibjarates.com`) with purity multipliers, falling back to Yahoo Finance (`GC=F` / `SI=F`) + Forex INR conversion and domestic premium logic
 - **Fixed Deposits:** Dynamic accrual using exact compound interest formulas based on elapsed days
 - **Real Estate:** User-provided estimated current value tracking
 
@@ -138,8 +139,20 @@ Most net-worth trackers are simple ledgers where you just type in a number. Asse
 - **Composite Financial Health Score (`FinancialHealthCard`):** A calculated 0–100 health index combining Debt-to-Asset ratio (30%), Liquidity ratio (25%), Asset diversification (25%), and Emergency Fund runway (20%) into a tiered rating (Excellent, Good, Fair, Needs Attention). Accompanied by Gemini AI-generated reasoning and 3 actionable improvement tips, cached with daily TTL.
 - **Anomaly Detection on Manual Entries (`AnomalyWarningBanner`):** Pre-save sanity checking engine evaluating entered purchase prices, interest rates, and quantities against historical market norms to warn users of possible typos or unit discrepancies before database persistence.
 
+### Phase 10: Wealth Lab Calculators, Physical Silver Commodity & Live Indian Market Pricing (Completed)
+- **Wealth Lab (`/calculators`):** Unified financial calculator suite updated to FY 2026–27 rates and tax slabs, organized into 4 domain dropdowns:
+  - *Tax & Retirement:* Income Tax (New Regime FY 2026–27), NPS Pension, Retirement Planner, SWP
+  - *Govt. & Savings:* PPF (7.1%), FD (7.25%), RD (7.25%), SSY (8.2%), NSC (7.7%), EPF (8.25%), SCSS (8.2%)
+  - *Wealth & Investments:* SIP & Lumpsum, Step-Up SIP, MF Expense Ratio, XIRR, Multi-Asset Wealth Pro, Future Wealth, Inflation
+  - *Loans & Credit:* EMI, Home Loan Prepayment, Fixed Principal Loan, Mortgage Calculator (INR)
+- **Gold & Silver Tools in `/assets`:** Integrated Live Gold Price, Live Silver Price, and Gold Profit Analyzer modal directly in the Assets page; Gold Profit Analyzer auto-syncs with existing portfolio Gold & Sovereign Gold Bond (SGB) holdings.
+- **Goals & Maturities Consolidation (`/goals`):** Shifted Upcoming Maturities (`?tab=maturities`) and Goal-Based Wealth Planner (`?tab=planner`) into the Goals hub.
+- **Physical Silver Commodity (`SILVER`):** End-to-end backend (`SilverItem`, `SilverPurity`, `SilverService`, `SilverController`, `SilverPriceProvider`, `silver_items` table) and frontend (`AddSilverForm`, `AssetSelectorModal`, `Assets`, rebalancing/analytics/snapshots).
+- **Direct Indian IBJA Metal Pricing:** Live 24K/22K Gold and 999 Silver rates fetched directly from IBJA (`ibjarates.com`) and exposed via `/api/assets/metals/rates`.
+- **Public Landing Page & Auth-Aware Root Routing:** Visitors at `/` see `LandingPage` when logged out and go directly to `Dashboard` when logged in.
+
 ## What is Left (Future Iterations)
-*All primary features and core roadmap milestones across Phases 1 through 9, including AI Integration, Document Vault, multi-currency foreign asset tracking, and financial reporting exports, are fully realized and active in production.*
+*All primary features and core roadmap milestones across Phases 1 through 10, including AI Integration, Document Vault, Wealth Lab Calculators, Physical Silver, Live Indian IBJA Metal Pricing, multi-currency foreign asset tracking, and financial reporting exports, are fully realized and active in production.*
 
 ---
 *Note: This document acts as the living blueprint for Asset Hub. It should be updated continually after every major development iteration to reflect the current state of the software.*

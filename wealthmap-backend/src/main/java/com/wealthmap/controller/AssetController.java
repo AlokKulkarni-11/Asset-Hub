@@ -7,6 +7,7 @@ import com.wealthmap.entity.User;
 import com.wealthmap.entity.base.Asset;
 import com.wealthmap.service.assets.FixedDepositService;
 import com.wealthmap.service.assets.GoldService;
+import com.wealthmap.service.assets.SilverService;
 import com.wealthmap.service.assets.StockService;
 import com.wealthmap.service.assets.MutualFundService;
 import com.wealthmap.service.assets.RealEstateService;
@@ -28,6 +29,7 @@ import java.util.List;
 public class AssetController {
 
     private final GoldService goldService;
+    private final SilverService silverService;
     private final FixedDepositService fdService;
     private final StockService stockService;
     private final MutualFundService mfService;
@@ -38,6 +40,8 @@ public class AssetController {
     private final AssetRepository assetRepository;
     private final UserRepository userRepository;
     private final com.wealthmap.service.AuditLogService auditLogService;
+    private final com.wealthmap.service.price.GoldPriceProvider goldPriceProvider;
+    private final com.wealthmap.service.price.SilverPriceProvider silverPriceProvider;
 
     @GetMapping
     public ResponseEntity<List<AssetResponse>> getAllAssets(Authentication authentication) {
@@ -45,6 +49,7 @@ public class AssetController {
         
         List<AssetResponse> allAssets = new ArrayList<>();
         allAssets.addAll(goldService.getAllGoldForUser(userEmail));
+        allAssets.addAll(silverService.getAllSilverForUser(userEmail));
         allAssets.addAll(fdService.getAllFDsForUser(userEmail));
         allAssets.addAll(stockService.getAllStocksForUser(userEmail));
         allAssets.addAll(mfService.getAllMutualFundsForUser(userEmail));
@@ -54,6 +59,22 @@ public class AssetController {
         allAssets.addAll(esopRsuService.getAllEsopRsusForUser(userEmail));
         
         return ResponseEntity.ok(allAssets);
+    }
+
+    @GetMapping("/metals/rates")
+    public ResponseEntity<java.util.Map<String, Object>> getLiveIndianMetalRates() {
+        java.math.BigDecimal gold24k = goldPriceProvider.getCurrentGoldPrice();
+        java.math.BigDecimal gold22k = gold24k.multiply(java.math.BigDecimal.valueOf(22.0 / 24.0))
+                .setScale(2, java.math.RoundingMode.HALF_UP);
+        java.math.BigDecimal silver999 = silverPriceProvider.getCurrentSilverPrice();
+
+        return ResponseEntity.ok(java.util.Map.of(
+                "gold24kPerGram", gold24k,
+                "gold22kPerGram", gold22k,
+                "silverPerGram", silver999,
+                "currency", "INR",
+                "source", "IBJA (India Bullion & Jewellers Association)"
+        ));
     }
 
     @GetMapping("/mutualfund/search")

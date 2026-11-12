@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { X, Coins, TrendingUp, Building2, Landmark, Briefcase, Sparkles, ScrollText } from 'lucide-react';
 import AddGoldForm from './AddGoldForm';
+import AddSilverForm from './AddSilverForm';
 import AddFDForm from './AddFDForm';
 import AddStockForm from './AddStockForm';
 import AddMutualFundForm from './AddMutualFundForm';
@@ -13,7 +14,7 @@ interface Props {
   onClose: () => void;
 }
 
-type AssetType = 'GOLD' | 'STOCK' | 'MUTUAL_FUND' | 'FD' | 'REAL_ESTATE' | 'CRYPTOCURRENCY' | 'BOND' | 'ESOP_RSU' | null;
+type AssetType = 'GOLD' | 'SILVER' | 'STOCK' | 'MUTUAL_FUND' | 'FD' | 'REAL_ESTATE' | 'CRYPTOCURRENCY' | 'BOND' | 'ESOP_RSU' | null;
 
 export default function AssetSelectorModal({ onClose }: Props) {
   const [selectedType, setSelectedType] = useState<AssetType>(null);
@@ -36,9 +37,10 @@ export default function AssetSelectorModal({ onClose }: Props) {
       ]
     },
     {
-      title: 'Physical Assets',
+      title: 'Physical Assets & Commodities',
       items: [
         { id: 'GOLD', name: 'Physical Gold', icon: Coins, comingSoon: false },
+        { id: 'SILVER', name: 'Physical Silver', icon: Coins, comingSoon: false },
         { id: 'REAL_ESTATE', name: 'Real Estate', icon: Building2, comingSoon: false },
       ]
     }
@@ -46,6 +48,10 @@ export default function AssetSelectorModal({ onClose }: Props) {
 
   if (selectedType === 'GOLD') {
     return <AddGoldForm onClose={onClose} />;
+  }
+
+  if (selectedType === 'SILVER') {
+    return <AddSilverForm onClose={onClose} />;
   }
 
   if (selectedType === 'FD') {

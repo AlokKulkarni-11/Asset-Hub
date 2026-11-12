@@ -67,7 +67,7 @@ public class RebalancingService {
                 .sum();
 
         double goldValue = assets.stream()
-                .filter(asset -> asset.getAssetType() == AssetType.GOLD || asset.getAssetType() == AssetType.SOVEREIGN_GOLD_BOND)
+                .filter(asset -> asset.getAssetType() == AssetType.GOLD || asset.getAssetType() == AssetType.SILVER || asset.getAssetType() == AssetType.SOVEREIGN_GOLD_BOND)
                 .mapToDouble(this::currentValue)
                 .sum();
 
