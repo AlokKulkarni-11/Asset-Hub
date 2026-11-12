@@ -9,7 +9,7 @@ const PRECACHE_RESOURCES = [
   '/AssetHub_Name.png',
   '/AssetHub.png',
   '/favicon.svg'
-};
+];
 
 // Install Event - Precache static shell
 self.addEventListener('install', (event) => {

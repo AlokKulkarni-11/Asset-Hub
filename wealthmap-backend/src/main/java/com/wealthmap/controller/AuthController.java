@@ -171,7 +171,8 @@ public class AuthController {
             return ResponseEntity.badRequest().body("TFA is not set up yet. Run setup first.");
         }
         
-        boolean verified = tfaService.verifyCode(user.getTfaSecret(), req.getCode());
+        String cleanCode = req.getCode() != null ? req.getCode().trim().replaceAll("\\s+", "") : "";
+        boolean verified = tfaService.verifyCode(user.getTfaSecret(), cleanCode);
         if (!verified) {
             return ResponseEntity.badRequest().body("Invalid verification code.");
         }
@@ -194,7 +195,8 @@ public class AuthController {
         }
         User user = userRepository.findByEmail(authentication.getName()).orElseThrow();
         
-        boolean verified = tfaService.verifyCode(user.getTfaSecret(), req.getCode());
+        String cleanCode = req.getCode() != null ? req.getCode().trim().replaceAll("\\s+", "") : "";
+        boolean verified = tfaService.verifyCode(user.getTfaSecret(), cleanCode);
         if (!verified) {
             return ResponseEntity.badRequest().body("Invalid verification code.");
         }
@@ -218,13 +220,14 @@ public class AuthController {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
+        String cleanCode = req.getCode() != null ? req.getCode().trim().replaceAll("\\s+", "") : "";
         boolean verified = false;
-        if (user.getTfaRecoveryCodes().contains(req.getCode().toUpperCase())) {
-            user.getTfaRecoveryCodes().remove(req.getCode().toUpperCase());
+        if (user.getTfaRecoveryCodes() != null && user.getTfaRecoveryCodes().contains(cleanCode.toUpperCase())) {
+            user.getTfaRecoveryCodes().remove(cleanCode.toUpperCase());
             userRepository.save(user);
             verified = true;
         } else {
-            verified = tfaService.verifyCode(user.getTfaSecret(), req.getCode());
+            verified = tfaService.verifyCode(user.getTfaSecret(), cleanCode);
         }
         
         if (!verified) {

@@ -112,7 +112,7 @@ export default function Login() {
 
   const handleTotpVerify = async (e?: React.FormEvent, codeToVerify?: string) => {
     if (e) e.preventDefault();
-    const code = (codeToVerify ?? totpCode).trim();
+    const code = (codeToVerify ?? totpCode).replace(/\s+/g, '').trim();
     if (!code || !tfaToken) return;
 
     try {
@@ -132,8 +132,8 @@ export default function Login() {
   };
 
   const handleTotpChange = (val: string) => {
-    setTotpCode(val);
-    const cleaned = val.trim();
+    const cleaned = val.replace(/\s+/g, '').trim();
+    setTotpCode(cleaned);
     // Auto-submit when exactly 6 digits are typed or pasted
     if (/^\d{6}$/.test(cleaned) && !loading) {
       handleTotpVerify(undefined, cleaned);

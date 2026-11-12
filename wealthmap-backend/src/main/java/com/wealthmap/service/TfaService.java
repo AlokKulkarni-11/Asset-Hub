@@ -18,7 +18,15 @@ public class TfaService {
     private final SecretGenerator secretGenerator = new DefaultSecretGenerator();
     private final TimeProvider timeProvider = new SystemTimeProvider();
     private final CodeGenerator codeGenerator = new DefaultCodeGenerator();
-    private final CodeVerifier verifier = new DefaultCodeVerifier(codeGenerator, timeProvider);
+    private final CodeVerifier verifier;
+
+    public TfaService() {
+        DefaultCodeVerifier defaultVerifier = new DefaultCodeVerifier(codeGenerator, timeProvider);
+        defaultVerifier.setTimePeriod(30);
+        // Allow ±60 seconds clock drift discrepancy (RFC 6238 standard) to account for client-server time sync variance
+        defaultVerifier.setAllowedTimePeriodDiscrepancy(2);
+        this.verifier = defaultVerifier;
+    }
 
     public String generateSecret() {
         return secretGenerator.generate();
@@ -37,7 +45,9 @@ public class TfaService {
     }
 
     public boolean verifyCode(String secret, String code) {
-        return verifier.isValidCode(secret, code);
+        if (secret == null || code == null) return false;
+        String cleanCode = code.replaceAll("\\s+", "").trim();
+        return verifier.isValidCode(secret, cleanCode);
     }
 
     public List<String> generateRecoveryCodes() {
