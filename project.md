@@ -161,8 +161,16 @@ Most net-worth trackers are simple ledgers where you just type in a number. Asse
 - **Account-Level 3-Strike Lockout:** Protected login against distributed botnets by tracking failed authentication attempts per normalized email in Caffeine cache. Enforces a 30-minute account lockout upon 3 consecutive failed attempts and resets upon successful login.
 - **Seamless 6-Digit TOTP Auto-Submit:** Optimized 2FA verification UX on both the login challenge screen and profile setup flow by automatically submitting verification requests the moment the 6th digit is typed or pasted.
 
+### Phase 12: Premium UI Polish, Modern 404 Experience & Animated AI Bot Personas (Completed)
+- **Human-Designed 404 Page (`NotFound.tsx`):** Replaced generic AI-style placeholder cards with a modern, Stripe/Linear-inspired error interface featuring ambient atmospheric backdrops, official Asset Hub brand headers, monospace error pill badges (`HTTP 404 · STATUS_UNRESOLVED`), and contextual primary CTA buttons.
+- **Dynamic 3-Column Popular Destinations Grid:** Integrated a real-time destination switcher adapting dynamically based on user authentication state (`Overview`, `Holdings`, `Wealth Lab` when authenticated; `Home`, `Sign in`, `Wealth Lab` when a guest).
+- **Interactive Anti-Gravity Bot Companion ("AssetBot"):** Built a vector-animated navigation bot equipped with smooth vertical levitation physics, matching ground-plane shadow scaling, cursor-tracking 3D tilt, blinking LED eyes, and interactive dialog bubbles cycling financial humor and redirection guidance on click.
+- **Hub Mate Animated Vector Bot (`HubMateBot.tsx`):** Engineered a multi-size (`mini`, `sm`, `md`, `lg`) vector bot persona featuring glowing antennas, animated eye blinks, chassis metallic gradients, and an active radar scanning beam across the visor when calculating or reasoning.
+- **Copilot Experience Integration (`AiAssistantPage.tsx` & `FloatingAiAssistant.tsx`):** Integrated the interactive Hub Mate avatar as a hero companion card on the main `/assistant` screen with cycling portfolio tips, upgraded chat message avatars, and redesigned the bottom-right floating trigger with an active hovering bot badge and online heartbeat indicator.
+- **Repository Optimization & `.gitignore` Architecture:** Purged compiled target build binaries from git index and instituted a robust root `.gitignore` ensuring Maven classes and frontend build bundles never pollute repository history.
+
 ## What is Left (Future Iterations)
-*All primary features and core roadmap milestones across Phases 1 through 11, including AI Integration, Document Vault, Wealth Lab Calculators, Physical Silver, Live Indian IBJA Metal Pricing, multi-currency foreign asset tracking, financial reporting exports, and enterprise-grade security hardening, are fully realized and active in production.*
+*All primary features and core roadmap milestones across Phases 1 through 12, including AI Integration, Document Vault, Wealth Lab Calculators, Physical Silver, Live Indian IBJA Metal Pricing, multi-currency foreign asset tracking, financial reporting exports, enterprise-grade security hardening, and animated AI personas, are fully realized and active in production.*
 
 ---
 *Note: This document acts as the living blueprint for Asset Hub. It should be updated continually after every major development iteration to reflect the current state of the software.*
