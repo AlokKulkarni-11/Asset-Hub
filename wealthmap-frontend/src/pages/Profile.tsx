@@ -306,7 +306,22 @@ export default function Profile() {
                         maxLength={6}
                         placeholder="000000"
                         value={verificationCode}
-                        onChange={(e) => setVerificationCode(e.target.value)}
+                        onChange={async (e) => {
+                          const val = e.target.value;
+                          setVerificationCode(val);
+                          // Auto-submit when exactly 6 digits are reached
+                          if (/^\d{6}$/.test(val.trim()) && !loading) {
+                            try {
+                              setLoading(true);
+                              const res = await enable2FA(val.trim());
+                              setRecoveryCodes(res.recoveryCodes);
+                            } catch (err: any) {
+                              alert(err.response?.data?.message || err.response?.data || 'Failed to verify and enable 2FA.');
+                            } finally {
+                              setLoading(false);
+                            }
+                          }
+                        }}
                         className="glass-input text-center text-sm font-semibold max-w-[120px]"
                       />
                       <button

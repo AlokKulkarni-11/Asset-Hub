@@ -110,14 +110,15 @@ export default function Login() {
     }
   };
 
-  const handleTotpVerify = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!totpCode || !tfaToken) return;
+  const handleTotpVerify = async (e?: React.FormEvent, codeToVerify?: string) => {
+    if (e) e.preventDefault();
+    const code = (codeToVerify ?? totpCode).trim();
+    if (!code || !tfaToken) return;
 
     try {
       setLoading(true);
       setError(null);
-      const res = await api.post('/auth/verify-totp', { code: totpCode, tfaToken });
+      const res = await api.post('/auth/verify-totp', { code, tfaToken });
       
       const { token, id, email, name, mobileNumber } = res.data;
       login(token, { id, email, name, mobileNumber });
@@ -127,6 +128,15 @@ export default function Login() {
       setError(err.response?.data?.message || err.response?.data || 'Failed to verify verification code.');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleTotpChange = (val: string) => {
+    setTotpCode(val);
+    const cleaned = val.trim();
+    // Auto-submit when exactly 6 digits are typed or pasted
+    if (/^\d{6}$/.test(cleaned) && !loading) {
+      handleTotpVerify(undefined, cleaned);
     }
   };
 
@@ -158,7 +168,7 @@ export default function Login() {
                 maxLength={10}
                 placeholder="Code"
                 value={totpCode}
-                onChange={(e) => setTotpCode(e.target.value)}
+                onChange={(e) => handleTotpChange(e.target.value)}
                 className="glass-input text-center text-lg tracking-widest font-semibold"
                 autoFocus
               />

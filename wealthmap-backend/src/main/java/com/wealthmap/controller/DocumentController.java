@@ -38,6 +38,14 @@ public class DocumentController {
     private final GeminiService geminiService;
     private final ObjectMapper objectMapper = new ObjectMapper();
 
+    private static final List<String> ALLOWED_MIME_TYPES = List.of(
+            "application/pdf",
+            "image/jpeg",
+            "image/png",
+            "image/webp"
+    );
+    private static final long MAX_FILE_SIZE_BYTES = 15 * 1024 * 1024; // 15MB
+
     @PostMapping(value = "/upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<AssetDocumentResponse> uploadDocument(
             Authentication authentication,
@@ -49,14 +57,39 @@ public class DocumentController {
         User user = userRepository.findByEmail(authentication.getName())
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
-        if (file.isEmpty()) {
+        if (file.isEmpty() || file.getSize() > MAX_FILE_SIZE_BYTES) {
             return ResponseEntity.badRequest().build();
+        }
+
+        String mimeType = file.getContentType() != null ? file.getContentType() : "application/pdf";
+        if (!ALLOWED_MIME_TYPES.contains(mimeType.toLowerCase())) {
+            return ResponseEntity.badRequest().build();
+        }
+
+        // Verify ownership if assetId or liabilityId is supplied
+        Asset asset = null;
+        if (assetId != null) {
+            asset = assetRepository.findById(assetId)
+                    .orElseThrow(() -> new RuntimeException("Asset not found"));
+            if (!asset.getUser().getId().equals(user.getId())) {
+                return ResponseEntity.status(org.springframework.http.HttpStatus.FORBIDDEN).build();
+            }
+        }
+
+        Liability liability = null;
+        if (liabilityId != null) {
+            liability = liabilityRepository.findById(liabilityId)
+                    .orElseThrow(() -> new RuntimeException("Liability not found"));
+            if (!liability.getUser().getId().equals(user.getId())) {
+                return ResponseEntity.status(org.springframework.http.HttpStatus.FORBIDDEN).build();
+            }
         }
 
         try {
             byte[] fileBytes = file.getBytes();
-            String fileName = file.getOriginalFilename() != null ? file.getOriginalFilename() : "document.pdf";
-            String mimeType = file.getContentType() != null ? file.getContentType() : "application/pdf";
+            String rawFileName = file.getOriginalFilename() != null ? file.getOriginalFilename() : "document.pdf";
+            // Sanitize filename to avoid path traversal / header injection
+            String fileName = java.nio.file.Paths.get(rawFileName).getFileName().toString();
 
             // 1. Upload to Google Drive
             Map<String, String> driveRes = googleDriveService.uploadFile(user, fileBytes, fileName, mimeType);
@@ -117,15 +150,8 @@ public class DocumentController {
             doc.setDriveDownloadUrl(downloadUrl);
             doc.setDocumentType(documentType);
             doc.setExtractedDataJson(extractedJsonStr);
-
-            if (assetId != null) {
-                Asset asset = assetRepository.findById(assetId).orElse(null);
-                doc.setAsset(asset);
-            }
-            if (liabilityId != null) {
-                Liability liability = liabilityRepository.findById(liabilityId).orElse(null);
-                doc.setLiability(liability);
-            }
+            doc.setAsset(asset);
+            doc.setLiability(liability);
 
             AssetDocument saved = documentRepository.save(doc);
 
@@ -140,14 +166,18 @@ public class DocumentController {
     public ResponseEntity<Map<String, Object>> parseDocumentOnly(
             @RequestParam("file") MultipartFile file
     ) {
-        if (file.isEmpty()) {
+        if (file.isEmpty() || file.getSize() > MAX_FILE_SIZE_BYTES) {
+            return ResponseEntity.badRequest().build();
+        }
+
+        String mimeType = file.getContentType() != null ? file.getContentType() : "application/pdf";
+        if (!ALLOWED_MIME_TYPES.contains(mimeType.toLowerCase())) {
             return ResponseEntity.badRequest().build();
         }
 
         Map<String, Object> extractedFields = new HashMap<>();
         try {
             byte[] fileBytes = file.getBytes();
-            String mimeType = file.getContentType() != null ? file.getContentType() : "application/pdf";
 
             if (geminiService.isConfigured()) {
                 String prompt = "Extract all financial parameters from this statement, sanction letter, invoice, or receipt to pre-fill an asset or liability/loan entry form.\n" +
@@ -176,6 +206,21 @@ public class DocumentController {
             Authentication authentication,
             @PathVariable Long assetId
     ) {
+        User user = userRepository.findByEmail(authentication.getName())
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        Asset asset = assetRepository.findById(assetId)
+                .orElseThrow(() -> new RuntimeException("Asset not found"));
+
+        // Only owner or members of the same family can view documents
+        boolean isOwner = asset.getUser().getId().equals(user.getId());
+        boolean isFamilyMember = user.getFamilyGroup() != null && asset.getFamilyGroup() != null &&
+                user.getFamilyGroup().getId().equals(asset.getFamilyGroup().getId());
+
+        if (!isOwner && !isFamilyMember) {
+            return ResponseEntity.status(org.springframework.http.HttpStatus.FORBIDDEN).build();
+        }
+
         List<AssetDocument> docs = documentRepository.findByAssetId(assetId);
         List<AssetDocumentResponse> list = docs.stream()
                 .map(d -> mapToResponse(d, parseExtractedJson(d.getExtractedDataJson())))
@@ -188,6 +233,20 @@ public class DocumentController {
             Authentication authentication,
             @PathVariable Long liabilityId
     ) {
+        User user = userRepository.findByEmail(authentication.getName())
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        Liability liability = liabilityRepository.findById(liabilityId)
+                .orElseThrow(() -> new RuntimeException("Liability not found"));
+
+        boolean isOwner = liability.getUser().getId().equals(user.getId());
+        boolean isFamilyMember = user.getFamilyGroup() != null && liability.getFamilyGroup() != null &&
+                user.getFamilyGroup().getId().equals(liability.getFamilyGroup().getId());
+
+        if (!isOwner && !isFamilyMember) {
+            return ResponseEntity.status(org.springframework.http.HttpStatus.FORBIDDEN).build();
+        }
+
         List<AssetDocument> docs = documentRepository.findByLiabilityId(liabilityId);
         List<AssetDocumentResponse> list = docs.stream()
                 .map(d -> mapToResponse(d, parseExtractedJson(d.getExtractedDataJson())))

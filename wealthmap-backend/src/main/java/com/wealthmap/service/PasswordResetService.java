@@ -10,10 +10,13 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
-import java.util.Random;
+import java.security.SecureRandom;
 
 @Service
 public class PasswordResetService {
+
+    private final SecureRandom secureRandom = new SecureRandom();
+    private static final int MAX_ATTEMPTS = 5;
 
     @Autowired
     private PasswordResetTokenRepository tokenRepository;
@@ -35,8 +38,8 @@ public class PasswordResetService {
         // Delete any existing tokens for this user to invalidate them
         tokenRepository.deleteByUser(user);
 
-        // Generate 6-digit OTP
-        String otp = String.format("%06d", new Random().nextInt(999999));
+        // Generate cryptographically secure 6-digit OTP
+        String otp = String.format("%06d", secureRandom.nextInt(1_000_000));
 
         PasswordResetToken token = new PasswordResetToken(otp, user);
         tokenRepository.save(token);
@@ -53,13 +56,21 @@ public class PasswordResetService {
         PasswordResetToken token = tokenRepository.findByUser(user)
                 .orElseThrow(() -> new RuntimeException("No active password reset request found"));
 
-        if (!token.getOtp().equals(otp)) {
-            throw new RuntimeException("Invalid OTP code");
-        }
-
         if (token.getExpiryDate().isBefore(LocalDateTime.now())) {
             tokenRepository.deleteByUser(user);
             throw new RuntimeException("OTP code has expired. Please request a new one.");
+        }
+
+        if (token.getAttemptCount() >= MAX_ATTEMPTS) {
+            tokenRepository.deleteByUser(user);
+            throw new RuntimeException("Too many failed attempts. This OTP has been invalidated for security. Please request a new one.");
+        }
+
+        if (!token.getOtp().equals(otp)) {
+            token.setAttemptCount(token.getAttemptCount() + 1);
+            tokenRepository.save(token);
+            int remaining = MAX_ATTEMPTS - token.getAttemptCount();
+            throw new RuntimeException("Invalid OTP code. " + (remaining > 0 ? remaining + " attempt(s) remaining." : "Request a new OTP."));
         }
 
         // Update password

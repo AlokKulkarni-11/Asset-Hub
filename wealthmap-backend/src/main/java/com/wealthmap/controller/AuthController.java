@@ -36,6 +36,7 @@ public class AuthController {
     private final AuthenticationManager authenticationManager;
     private final UserDetailsService userDetailsService;
     private final TfaService tfaService;
+    private final com.wealthmap.security.LoginAttemptService loginAttemptService;
 
     @org.springframework.beans.factory.annotation.Value("${google.client.id:}")
     private String googleClientId;
@@ -68,9 +69,36 @@ public class AuthController {
 
     @PostMapping("/login")
     public ResponseEntity<?> login(@Valid @RequestBody LoginRequest request) {
-        authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(request.getEmail(), request.getPassword())
-        );
+        String email = request.getEmail().toLowerCase().trim();
+
+        // Check if account is locked due to repeated failed attempts (3 attempts -> 30 min lock)
+        if (loginAttemptService.isAccountLocked(email)) {
+            long remainingMins = loginAttemptService.getRemainingLockoutMinutes(email);
+            return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS).body(
+                    "Account is temporarily locked due to 3 consecutive failed login attempts. Please try again in " + remainingMins + " minute(s)."
+            );
+        }
+
+        try {
+            authenticationManager.authenticate(
+                    new UsernamePasswordAuthenticationToken(request.getEmail(), request.getPassword())
+            );
+        } catch (org.springframework.security.core.AuthenticationException ex) {
+            int attempts = loginAttemptService.recordFailedAttempt(email);
+            int remaining = com.wealthmap.security.LoginAttemptService.MAX_FAILED_LOGIN_ATTEMPTS - attempts;
+            if (remaining > 0) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(
+                        "Invalid email or password. " + remaining + " attempt(s) remaining before a 30-minute account lockout."
+                );
+            } else {
+                return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS).body(
+                        "Account locked. 3 consecutive failed attempts detected. Access blocked for 30 minutes."
+                );
+            }
+        }
+
+        // Login succeeded -> Clear failed attempt counter
+        loginAttemptService.loginSucceeded(email);
 
         User user = userRepository.findByEmail(request.getEmail())
                 .orElseThrow(() -> new RuntimeException("User not found"));

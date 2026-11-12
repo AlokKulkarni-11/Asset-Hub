@@ -25,10 +25,14 @@ public class PasswordResetToken {
     @Column(nullable = false)
     private LocalDateTime expiryDate;
 
+    @Column(nullable = false)
+    private int attemptCount = 0;
+
     public PasswordResetToken(String otp, User user) {
         this.otp = otp;
         this.user = user;
-        // Set expiry to 15 minutes from creation
-        this.expiryDate = LocalDateTime.now().plusMinutes(15);
+        // Set expiry to 10 minutes from creation
+        this.expiryDate = LocalDateTime.now().plusMinutes(10);
+        this.attemptCount = 0;
     }
 }
