@@ -42,8 +42,8 @@ self.addEventListener('fetch', (event) => {
   const { request } = event;
   const url = new URL(request.url);
 
-  // Disregard non-GET requests
-  if (request.method !== 'GET') {
+  // Disregard non-GET requests and non-http(s) schemes (e.g. chrome-extension://)
+  if (request.method !== 'GET' || !url.protocol.startsWith('http')) {
     return;
   }
 
