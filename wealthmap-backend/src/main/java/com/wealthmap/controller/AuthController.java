@@ -196,7 +196,12 @@ public class AuthController {
         User user = userRepository.findByEmail(authentication.getName()).orElseThrow();
         
         String cleanCode = req.getCode() != null ? req.getCode().trim().replaceAll("\\s+", "") : "";
-        boolean verified = tfaService.verifyCode(user.getTfaSecret(), cleanCode);
+        boolean verified = false;
+        if (user.getTfaRecoveryCodes() != null && user.getTfaRecoveryCodes().contains(cleanCode.toUpperCase())) {
+            verified = true;
+        } else {
+            verified = tfaService.verifyCode(user.getTfaSecret(), cleanCode);
+        }
         if (!verified) {
             return ResponseEntity.badRequest().body("Invalid verification code.");
         }
