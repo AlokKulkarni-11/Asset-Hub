@@ -21,21 +21,16 @@ public class DataMigrationRunner implements CommandLineRunner {
     @Override
     public void run(String... args) {
         try {
-            logger.info("=== STARTING DATA MIGRATION CHECK ===");
-            List<Map<String, Object>> assets = jdbcTemplate.queryForList("SELECT * FROM assets");
-            logger.info("Total assets in DB: " + assets.size());
-            logger.info("Assets Dump: " + assets.toString());
-            
-            if (assets.size() > 0) {
-                int updated = jdbcTemplate.update(
-                    "UPDATE assets SET user_id = f.user_id " +
-                    "FROM family_members f " +
-                    "WHERE assets.family_member_id = f.id AND assets.user_id IS NULL"
-                );
-                logger.info("Migration successful! Updated " + updated + " assets with correct user_id.");
+            int updated = jdbcTemplate.update(
+                "UPDATE assets SET user_id = f.user_id " +
+                "FROM family_members f " +
+                "WHERE assets.family_member_id = f.id AND assets.user_id IS NULL"
+            );
+            if (updated > 0) {
+                logger.info("Data migration: Updated {} assets with user_id.", updated);
             }
         } catch (Exception e) {
-            logger.error("Migration check failed: " + e.getMessage());
+            logger.debug("Migration check skipped: {}", e.getMessage());
         }
     }
 }
