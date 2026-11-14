@@ -1,5 +1,6 @@
-﻿import React, { useState } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import api from '../api/axios';
 import {
   TrendingUp,
   Shield,
@@ -23,6 +24,11 @@ import {
 
 export default function LandingPage() {
   const [activeFaq, setActiveFaq] = useState<number | null>(null);
+
+  // Pre-warm backend when visitor lands on homepage
+  useEffect(() => {
+    api.get('/auth/ping').catch(() => {});
+  }, []);
 
   const assetPillars = [
     { name: 'Stocks & Equities', icon: TrendingUp, desc: 'Real-time Yahoo Finance ticker pricing for US & Indian exchanges.' },

@@ -48,6 +48,19 @@ public class AuthController {
         return ResponseEntity.ok(res);
     }
 
+    @GetMapping("/ping")
+    public ResponseEntity<?> ping() {
+        // Touch database to pre-warm HikariCP connection pool on cold starts
+        try {
+            userRepository.count();
+        } catch (Exception ignored) {
+        }
+        java.util.Map<String, Object> res = new java.util.HashMap<>();
+        res.put("status", "UP");
+        res.put("timestamp", System.currentTimeMillis());
+        return ResponseEntity.ok(res);
+    }
+
     @PostMapping("/register")
     public ResponseEntity<?> register(@Valid @RequestBody RegisterRequest request) {
         if (userRepository.existsByEmail(request.getEmail())) {

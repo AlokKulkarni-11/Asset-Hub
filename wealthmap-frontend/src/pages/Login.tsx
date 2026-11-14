@@ -23,6 +23,7 @@ export default function Login() {
   
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [slowNotice, setSlowNotice] = useState(false);
   const [showForgotModal, setShowForgotModal] = useState(false);
   
   // 2FA States
@@ -32,6 +33,24 @@ export default function Login() {
   
   const login = useAuthStore((state) => state.login);
   const navigate = useNavigate();
+
+  // Background ping immediately when Login page mounts to warm up Render
+  useEffect(() => {
+    api.get('/auth/ping').catch(() => {});
+  }, []);
+
+  // Show helpful cold-start notice if login takes > 3.5 seconds
+  useEffect(() => {
+    let timer: any;
+    if (loading) {
+      timer = setTimeout(() => {
+        setSlowNotice(true);
+      }, 3500);
+    } else {
+      setSlowNotice(false);
+    }
+    return () => clearTimeout(timer);
+  }, [loading]);
 
   // Handle Google OAuth Callback
   useEffect(() => {
@@ -265,6 +284,12 @@ export default function Login() {
           >
             {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Secure Login'}
           </button>
+
+          {loading && slowNotice && (
+            <div className="flex items-center justify-center gap-2 mt-3 text-xs text-blue-600 bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-900 rounded-lg p-2.5 animate-pulse">
+              <span>Waking up cloud instance, connecting in a moment...</span>
+            </div>
+          )}
         </form>
 
         <div className="relative my-6">

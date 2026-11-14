@@ -1,7 +1,8 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ThemeProvider } from './providers/ThemeProvider';
+import api from './api/axios';
 import AppLayout from './components/layout/AppLayout';
 import Login from './pages/Login';
 import Register from './pages/Register';
@@ -33,6 +34,13 @@ import { useAuthStore } from './store/authStore';
 function AppContent() {
   usePageMeta();
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+
+  // Proactively pre-warm Render cloud backend on app load if unauthenticated
+  useEffect(() => {
+    if (!isAuthenticated) {
+      api.get('/auth/ping').catch(() => {});
+    }
+  }, [isAuthenticated]);
 
   return (
     <Routes>
