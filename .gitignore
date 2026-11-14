@@ -4,11 +4,16 @@ target/
 *.class
 *.jar
 
-# Frontend build
+# Frontend build & packages
 node_modules/
 **/node_modules/
 dist/
 **/dist/
+
+# Backend node artifacts (if any)
+wealthmap-backend/package.json
+wealthmap-backend/package-lock.json
+wealthmap-backend/test_api.js
 
 # IDE & Editor
 .idea/
@@ -17,6 +22,21 @@ dist/
 
 # Logs & Environment
 *.log
+**/*.log
 .env
+**/.env
 .DS_Store
 Thumbs.db
+
+# Scratch scripts
+wealthmap-frontend/test.js
+wealthmap-frontend/writePage.js
+wealthmap-frontend/replace_colors.py
+
+# Documentation, scratch notes & schemas
+*.md
+!README.md
+!wealthmap-backend/README.md
+!wealthmap-frontend/README.md
+*.sql
+
